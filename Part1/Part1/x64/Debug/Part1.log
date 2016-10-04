@@ -1,0 +1,5 @@
+﻿  squelette_test_opencv.cpp
+d:\github\irf_project\part1\part1\histogram.h(7): fatal error C1083: Impossible d'ouvrir le fichier include : 'cv.h' : No such file or directory
+  histogram.cpp
+d:\github\irf_project\part1\part1\histogram.h(7): fatal error C1083: Impossible d'ouvrir le fichier include : 'cv.h' : No such file or directory
+  Génération de code en cours...
