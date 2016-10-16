@@ -17,6 +17,8 @@ void computeHistogram(string histTitle, Mat img) {
 	vector<Mat> channels;
 	if (numChannels == 3) split(img, channels);
 	else channels.push_back(img);
+	
+
 
 	// COMPUTE
 	int zero = 0;
