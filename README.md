@@ -11,3 +11,6 @@
 
 ## image database
 [Dropbox](https://www.dropbox.com/sh/gvmzziq6i2aspc5/AABesIsqnpKkrrsHeMLuFJWXa?dl=0)
+
+## helpful links
+* [Tutorial on something very similar](http://blog.ayoungprogrammer.com/2013/04/tutorial-detecting-multiple-rectangles.html/)
