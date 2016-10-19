@@ -7,6 +7,8 @@
 // date : 4/10/2010
 //////////////////////////////////////////////////////////////////////////
 
+#define _USE_MATH_DEFINES
+
 #include "histogram.h"
 
 #include "cv.h"
@@ -14,51 +16,102 @@
 using namespace cv;
 
 #include <iostream>
+#include <cmath>
+
 using namespace std;
 
+/*
+	Gets the lines on a given image.
+	@param im	The image
+	@return The lines founded
+*/
+vector<Vec4i> getLines(const Mat& im) {
+	vector<Vec4i> lines;
+	HoughLinesP(im, lines, 1, CV_PI / 180, 50, 50, 10);
+	return lines;
+}
+
+/*
+	Shows the lines on an image.
+	@param source	The image used for the lines
+	@param lines	The lines
+*/
+void showLines(const Mat& source, const vector<Vec4i>& lines) {
+	Mat cdst;
+	cvtColor(source, cdst, COLOR_GRAY2BGR);
+	for (size_t i = 0; i < lines.size(); i++)
+	{
+		Vec4i l = lines[i];
+		line(cdst, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 2, CV_AA);
+	}
+	imshow("Lines", cdst);
+}
+
+/*
+	Loads the image.
+	If the image can't be loaded, exit the program
+	@param name Name of the image to load
+	@return The loaded image
+*/
+Mat loadImage(const string& name) {
+	//charge et affiche l'image 
+	Mat im = imread(name);
+	if (im.data == NULL) {
+		cerr << "Image not found: " << name << endl;
+		exit(0);
+	}
+	return im;
+}
+
+/*
+	Cleans the image.
+	@param The binary image
+	@return The cleaned image
+*/
+Mat cleanImg(const Mat& binaryImg) {
+	Mat dst;
+	GaussianBlur(binaryImg, dst, Size(3, 3), 0);
+	adaptiveThreshold(dst, dst, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 75, 10);
+	bitwise_not(dst, dst);
+	return dst;
+}
+
+/*
+	Reduces the image of a given reduction
+	@param im			The image to reduce
+	@param reduction	The reduction to apply
+
+*/
+Mat reduce(const Mat& im, int reduction) {
+	Size tailleReduite(im.cols / reduction, im.rows / reduction);
+	Mat imreduite = Mat(tailleReduite, CV_8UC3); //cree une image à 3 canaux de profondeur 8 bits chacuns
+	resize(im, imreduite, tailleReduite);
+	return imreduite;
+}
 
 int main (void) {
 
-	//charge et affiche l'image 
-	string imName = "00000.png";
-	Mat im = imread(imName);
-	if(im.data == NULL){
-		cerr << "Image not found: "<< imName << endl;
-		exit(0);
-	}
-	//imshow("exemple1", im);
+	// Load the image
+	Mat im = loadImage("00000.png");
 
-	//applique une reduction de taille d'un facteur 5
-	//ici modifier pour ne reduire qu'a l'affichage 
-	//comme demande dans l'enonce
-	int reduction = 5;
-	Size tailleReduite(im.cols/reduction, im.rows/reduction);
-	Mat imreduite = Mat(tailleReduite,CV_8UC3); //cree une image à 3 canaux de profondeur 8 bits chacuns
-	resize(im,imreduite,tailleReduite);
-	imshow("image reduite", imreduite);
+	// Reduce de image size
+	Mat imreduite = reduce(im, 5);
+	imshow("Reduced", imreduite);
 
 	//Grayscale matrix
-	cv::Mat grayscaleMat(imreduite.size(), CV_8U);
+	Mat grayscaleMat(imreduite.size(), CV_8U);
 
 	//Convert BGR to Gray
-	cv::cvtColor(imreduite, grayscaleMat, CV_BGR2GRAY);
+	cvtColor(imreduite, grayscaleMat, CV_BGR2GRAY);
 
-	//Binary image
-	cv::Mat binaryMat(grayscaleMat.size(), grayscaleMat.type());
+	// Clean the image
+	Mat dst = cleanImg(grayscaleMat);
+	imshow("Clean img", dst);
 
-	cv::threshold(grayscaleMat, binaryMat, mean(grayscaleMat)[0], 255, cv::THRESH_BINARY);
-	cv::imshow("Output threshold", binaryMat);
-
-
+	// Show the lines founded on dst
+	showLines(dst, getLines(dst));
 
 	//computeHistogram("histogramme", im);
-
-
-
-
-
-
-
 
 	//termine le programme lorsqu'une touche est frappee
 	waitKey(0);

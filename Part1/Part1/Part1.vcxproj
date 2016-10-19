@@ -152,9 +152,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Image Include="00000.png" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="histogram.cpp" />
     <ClCompile Include="squelette_test_opencv.cpp" />
   </ItemGroup>

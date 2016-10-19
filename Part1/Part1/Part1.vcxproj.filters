@@ -15,11 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="00000.png">
-      <Filter>Fichiers de ressources</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="histogram.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
