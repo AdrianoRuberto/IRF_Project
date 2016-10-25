@@ -37,14 +37,15 @@ vector<Vec4i> getLines(const Mat& im) {
 	@param lines	The lines
 */
 void showLines(const Mat& source, const vector<Vec4i>& lines) {
+	static int j = 0;
 	Mat cdst;
 	cvtColor(source, cdst, COLOR_GRAY2BGR);
-	for (size_t i = 0; i < lines.size(); i++)
-	{
+	for (size_t i = 0; i < lines.size(); i++) {
 		Vec4i l = lines[i];
 		line(cdst, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 2, CV_AA);
 	}
-	imshow("Lines", cdst);
+
+	imshow("Lines " + to_string(j++), cdst);
 }
 
 /*
@@ -89,14 +90,10 @@ Mat reduce(const Mat& im, int reduction) {
 	return imreduite;
 }
 
-int main (void) {
-
-	// Load the image
-	Mat im = loadImage("00000.png");
-
+void slice(const Mat& im) {
 	// Reduce de image size
 	Mat imreduite = reduce(im, 5);
-	imshow("Reduced", imreduite);
+	//imshow("Reduced", imreduite);
 
 	//Grayscale matrix
 	Mat grayscaleMat(imreduite.size(), CV_8U);
@@ -106,10 +103,18 @@ int main (void) {
 
 	// Clean the image
 	Mat dst = cleanImg(grayscaleMat);
-	imshow("Clean img", dst);
+	//imshow("Clean img", dst);
 
 	// Show the lines founded on dst
 	showLines(dst, getLines(dst));
+}
+
+int main (void) {
+
+	// Load the image
+	slice(loadImage("00000.png"));
+	slice(loadImage("00000_a.png"));
+	slice(loadImage("00000_b.png"));
 
 	//computeHistogram("histogramme", im);
 
