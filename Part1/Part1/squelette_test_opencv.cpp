@@ -12,6 +12,8 @@
 #define IMG_HOR 2480 / 5
 #define IMG_VER 3508 / 5
 
+typedef vector<vector<Vec4i>> VectorHV;
+
 #include "histogram.h"
 
 #include "cv.h"
@@ -55,6 +57,56 @@ vector<Vec4i> getLines(const Mat& im) {
 	cout << lines.size() << " | " << cleanedLines.size() << " (" << lines.size() - cleanedLines.size() << ")" << endl;
 
 	return cleanedLines;
+}
+
+Point2f computeIntersect(cv::Vec4i a, cv::Vec4i b)
+{
+	int x1 = a[0], y1 = a[1], x2 = a[2], y2 = a[3];
+	int x3 = b[0], y3 = b[1], x4 = b[2], y4 = b[3];
+	if (float d = ((float)(x1 - x2) * (y3 - y4)) - ((y1 - y2) * (x3 - x4)))
+	{
+		cv::Point2f pt;
+		pt.x = ((x1*y2 - y1*x2) * (x3 - x4) - (x1 - x2) * (x3*y4 - y3*x4)) / d;
+		pt.y = ((x1*y2 - y1*x2) * (y3 - y4) - (y1 - y2) * (x3*y4 - y3*x4)) / d;
+		//-10 is a threshold, the POI can be off by at most 10 pixels
+		if (pt.x<min(x1, x2) - 10 || pt.x>max(x1, x2) + 10 || pt.y<min(y1, y2) - 10 || pt.y>max(y1, y2) + 10) {
+			return Point2f(-1, -1);
+		}
+		if (pt.x<min(x3, x4) - 10 || pt.x>max(x3, x4) + 10 || pt.y<min(y3, y4) - 10 || pt.y>max(y3, y4) + 10) {
+			return Point2f(-1, -1);
+		}
+		return pt;
+	}
+	else
+		return cv::Point2f(-1, -1);
+}
+
+/*
+ 0 : hori
+ 1 : verti
+*/
+VectorHV linesToHV(const vector<Vec4i>& lines) {
+	vector<Vec4i> horizontals, verticals;
+
+	const size_t HORIZONTAL_BOUND = 2;
+	const size_t VERTICAL_BOUND = 2;
+
+	for (size_t i = 0; i < lines.size(); ++i) {
+		Vec4i l = lines[i];
+		if (abs(l[1] - l[3]) <= HORIZONTAL_BOUND)
+		{
+			horizontals.push_back(l);
+		}
+		else if (abs(l[0] - l[2]) <= VERTICAL_BOUND) {
+			verticals.push_back(l);
+		}
+	}
+
+	VectorHV res;
+	res.push_back(horizontals);
+	res.push_back(verticals);
+
+	return res;
 }
 
 /*
@@ -132,16 +184,30 @@ void slice(const Mat& im) {
 	Mat dst = cleanImg(grayscaleMat);
 	//imshow("Clean img", dst);
 
+	VectorHV lines = linesToHV(getLines(dst));
+
+	for (size_t i = 0; i < lines[0].size(); ++i) {
+		for (size_t j = 0; j < lines[1].size(); ++j) {
+			computeIntersect(lines[0][i], lines[1][j]);
+		}
+	}
+	
+
 	// Show the lines founded on dst
 	showLines(dst, getLines(dst));
 }
 
 int main (void) {
 
+
+	
+
 	// Load the image
 	slice(loadImage("00000.png"));
 	slice(loadImage("00000_a.png"));
 	slice(loadImage("00000_b.png"));
+
+
 	
 
 	//computeHistogram("histogramme", im);
