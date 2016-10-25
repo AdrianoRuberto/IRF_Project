@@ -34,13 +34,14 @@ vector<Vec4i> getLines(const Mat& im) {
 
 	size_t estiSizeHor = IMG_HOR * 261 / 2480;
 	size_t estiSizeVer = IMG_VER * 258 / 3508;
-	size_t upper = max(estiSizeHor, estiSizeVer) * 1.1;
-	upper *= upper;
+	size_t upper = max(estiSizeHor, estiSizeVer);
+	size_t upper_sqr = upper * upper * 1.1 * 1.1;
+	size_t estiGap = min(IMG_HOR * 80 / 2480, IMG_VER * 85 / 3508) * 0.9;
 
 	const size_t LOWER_BOUND = 0;
-	const size_t UPPER_BOUND = upper;
+	const size_t UPPER_BOUND = upper_sqr;
 
-	HoughLinesP(im, lines, 1, CV_PI / 180, 80, 50, 10);
+	HoughLinesP(im, lines, 1, CV_PI / 180, 70, upper * 0.95, estiGap);
 
 	// Remove bad lines
 	for (size_t i = 0; i < lines.size(); ++i) {
