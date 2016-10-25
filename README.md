@@ -14,3 +14,4 @@
 
 ## helpful links
 * [Tutorial on something very similar](http://blog.ayoungprogrammer.com/2013/04/tutorial-detecting-multiple-rectangles.html/)
+* [HoughLinesP](http://docs.opencv.org/2.4/modules/imgproc/doc/feature_detection.html?highlight=houghlinesp#houghlinesp)
