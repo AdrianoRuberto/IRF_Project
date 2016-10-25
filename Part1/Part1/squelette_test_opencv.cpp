@@ -9,6 +9,9 @@
 
 #define _USE_MATH_DEFINES
 
+#define IMG_HOR 2480 / 5
+#define IMG_VER 3508 / 5
+
 #include "histogram.h"
 
 #include "cv.h"
@@ -27,8 +30,30 @@ using namespace std;
 */
 vector<Vec4i> getLines(const Mat& im) {
 	vector<Vec4i> lines;
-	HoughLinesP(im, lines, 1, CV_PI / 180, 50, 50, 10);
-	return lines;
+	vector<Vec4i> cleanedLines;
+
+	size_t estiSizeHor = IMG_HOR * 261 / 2480;
+	size_t estiSizeVer = IMG_VER * 258 / 3508;
+	size_t upper = max(estiSizeHor, estiSizeVer) * 1.1;
+	upper *= upper;
+
+	const size_t LOWER_BOUND = 0;
+	const size_t UPPER_BOUND = upper;
+
+	HoughLinesP(im, lines, 1, CV_PI / 180, 80, 50, 10);
+
+	// Remove bad lines
+	for (size_t i = 0; i < lines.size(); ++i) {
+		Vec4i l = lines[i];
+		int dist = (l[2] - l[0]) * (l[2] - l[0]) + (l[3] - l[1]) * (l[3] - l[1]);
+		if (dist <= UPPER_BOUND) {
+			cleanedLines.push_back(l);
+		}
+	}
+
+	cout << lines.size() << " | " << cleanedLines.size() << " (" << lines.size() - cleanedLines.size() << ")" << endl;
+
+	return cleanedLines;
 }
 
 /*
@@ -73,7 +98,7 @@ Mat cleanImg(const Mat& binaryImg) {
 	Mat dst;
 	GaussianBlur(binaryImg, dst, Size(3, 3), 0);
 	adaptiveThreshold(dst, dst, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 75, 10);
-	bitwise_not(dst, dst);
+    bitwise_not(dst, dst);
 	return dst;
 }
 
@@ -84,16 +109,17 @@ Mat cleanImg(const Mat& binaryImg) {
 
 */
 Mat reduce(const Mat& im, int reduction) {
+
 	Size tailleReduite(im.cols / reduction, im.rows / reduction);
 	Mat imreduite = Mat(tailleReduite, CV_8UC3); //cree une image à 3 canaux de profondeur 8 bits chacuns
 	resize(im, imreduite, tailleReduite);
+
 	return imreduite;
 }
 
 void slice(const Mat& im) {
 	// Reduce de image size
 	Mat imreduite = reduce(im, 5);
-	//imshow("Reduced", imreduite);
 
 	//Grayscale matrix
 	Mat grayscaleMat(imreduite.size(), CV_8U);
@@ -115,6 +141,7 @@ int main (void) {
 	slice(loadImage("00000.png"));
 	slice(loadImage("00000_a.png"));
 	slice(loadImage("00000_b.png"));
+	
 
 	//computeHistogram("histogramme", im);
 
