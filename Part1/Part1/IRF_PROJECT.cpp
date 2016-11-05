@@ -28,7 +28,7 @@ using namespace std;
 #define RECT_THRESHOLD 80
 
 // offset to apply to lines coordinates to avoid taking the borders
-#define COORD_OFFSET 10
+#define COORD_OFFSET 5
 
 /*
 Loads the image.
@@ -44,6 +44,14 @@ Mat loadImage(const string &name) {
 	}
 	return im;
 }
+
+
+/*
+bool cmp(const Rect& a, const Rect& b) {
+return a.y <= b.y && a.x <= b.x;
+}
+*/
+
 
 /*
 	Gets the correct rectangles that can be found on the given matrice
@@ -191,6 +199,11 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 
 	cout << correctRectangles.size() << " rectangles found !" << endl;
 
+	// Sort to have from top left to down right 
+	//sort(correctRectangles.begin(), correctRectangles.end(), cmp);
+
+
+
 	return correctRectangles;
 }
 
@@ -209,16 +222,43 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	return images;
 }
 
-int main(void) {
-	Mat im_rgb = loadImage("00000.png");
-	for (const Rect& r : getRectangles(im_rgb)) {
-		rectangle(im_rgb, r, Scalar(0, 0, 255), 4);
-	}
 
-	int i = 0;
-	for (const Mat& m : slice(im_rgb, getRectangles(im_rgb))) {
-		imshow("Image no " + to_string(i++), m);
+void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails) {
+	const string SAVE_DIR = "results/";
+
+	string scripter = fileName.substr(0, 3);
+	string page = fileName.substr(3, 2);
+
+	for (int i = 0; i < subThumbnails.size(); ++i) {
+		// Creating the string
+		string label = "XXX"; // TODO
+		string row = to_string(i / 5 + 1);
+		string col = to_string((i % 5) + 1);
+		string name = label + "_" + scripter + "_" + page + "_" + row + "_" + col;
+		
+		// Save the thumbnails
+		imwrite(SAVE_DIR + name + ".png", subThumbnails.at(i));
+
+		// Save the description file
+		ofstream file(SAVE_DIR + name + ".txt");
+		file << "#Groupe Adriano / Emmanuel / Guimel / Patrick\n";
+		file << "label " + label + "\n";
+		file << "form " << scripter << page << "\n";
+		file << "scripter " << scripter << "\n";
+		file << "page " << page << "\n";
+		file << "row " << row << "\n";
+		file << "col " << col << "\n";
+		file << "size " << subThumbnails.at(i).size() << "\n";
+		file.close();
 	}
+}
+
+int main(void) {
+	const string PATH_IMGDB = "imgdb/";
+	string fileName = "00000.png";
+	
+	Mat im_rgb = loadImage(PATH_IMGDB + fileName);
+	saveSubThumbnails(fileName, slice(im_rgb, getRectangles(im_rgb)));
 
 	
 	/*

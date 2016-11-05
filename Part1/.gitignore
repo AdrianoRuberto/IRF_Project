@@ -4,4 +4,5 @@ Part1.VC.db
 *.opendb
 .vs/*
 *.TMP
-NicIcon/
+*.png
+*.txt
