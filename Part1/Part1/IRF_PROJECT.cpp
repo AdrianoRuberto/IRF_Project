@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <math.h>
+#include <iomanip>
 
 using namespace cv;
 using namespace std;
@@ -237,19 +238,27 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails)
 		file << "page " << page << "\n";
 		file << "row " << row << "\n";
 		file << "col " << col << "\n";
-		file << "size " << subThumbnails.at(i).size() << "\n";
 		file.close();
 	}
 }
 
 int main(void) {
 	const string PATH_IMGDB = "imgdb/";
-	string fileName = "00000.png";
 	
-	Mat im_rgb = loadImage(PATH_IMGDB + fileName);
-	saveSubThumbnails(fileName, slice(im_rgb, getRectangles(im_rgb)));
+	for (int i = 0; i < 30; ++i) {
+		stringstream filename;
+		filename << setfill('0') << setw(5) << i << ".png";
+		Mat im_rgb = imread(PATH_IMGDB + filename.str());
+		if (im_rgb.data != NULL) {
+			cout << filename.str() << " | ";
+			vector<Rect> res = getRectangles(im_rgb);
+			if (res.size() >= 5) {
+				saveSubThumbnails(filename.str(), slice(im_rgb, res));
+			}
+		}
+	}
 
-	
+
 	/*
 	int reduction = 2;
 	Size tailleReduite(im_rgb.cols / reduction, im_rgb.rows / reduction);
@@ -258,6 +267,6 @@ int main(void) {
 	cv::namedWindow("reduced image", WINDOW_NORMAL);
 	cv::imshow("reduced image", im_rgb);
 	*/
-	waitKey(0);
+	system("PAUSE");
 	return 0;
 }
