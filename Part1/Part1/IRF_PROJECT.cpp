@@ -38,8 +38,7 @@ Mat loadImage(const string &name) {
 	return im;
 }
 
-void slice(const string& imName) {
-	Mat im_rgb = loadImage(imName);
+vector<Rect> getRectangles(const Mat& im_rgb) {
 	Mat im_gray;
 	cvtColor(im_rgb, im_gray, COLOR_BGR2GRAY);
 	int im_rows = im_gray.rows;
@@ -181,22 +180,26 @@ void slice(const string& imName) {
 	cout << correctRectangles.size() << " rectangles found !" << endl;
 
 	// Draw the rects
-	for (const Rect& r : correctRectangles) {
-		rectangle(im_rgb, r, Scalar(0, 0, 255), 4);
-	}
+	
 
-	imwrite("im_result.png", im_rgb);
-
+	/*
 	int reduction = 2;
 	Size tailleReduite(im_cols / reduction, im_rows / reduction);
 	Mat imreduite = Mat(tailleReduite, CV_8UC3);
 	cv::resize(im_rgb, imreduite, tailleReduite);
 	cv::namedWindow("reduced image", WINDOW_NORMAL);
 	cv::imshow("reduced image", im_rgb);
+	*/
+	
+
+	return correctRectangles;
 }
 
 int main(void) {
-	slice("00000.png");
+	Mat im_rgb = loadImage("00000.png");
+	for (const Rect& r : getRectangles(im_rgb)) {
+		rectangle(im_rgb, r, Scalar(0, 0, 255), 4);
+	}
 	waitKey(0);
 	return 0;
 }
