@@ -1,4 +1,11 @@
-// getting started with the open cv library
+//////////////////////////////////////////////////////////////////////////
+// Module IRF, 5-iNFO
+// Projet - première étape
+// thème : Première étape du projet
+// contenu : Pre-processing and image processing
+// auteur : TODO
+// date : TODO
+//////////////////////////////////////////////////////////////////////////
 
 //#include"stdafx.h"
 #include "histogram.h"
@@ -38,6 +45,11 @@ Mat loadImage(const string &name) {
 	return im;
 }
 
+/*
+	Gets the correct rectangles that can be found on the given matrice
+	@param im_rgb	The given image
+	@return A vector with all the founded rectangle
+*/
 vector<Rect> getRectangles(const Mat& im_rgb) {
 	Mat im_gray;
 	cvtColor(im_rgb, im_gray, COLOR_BGR2GRAY);
@@ -182,6 +194,12 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 	return correctRectangles;
 }
 
+/*
+	Slices a given matrice with the given rectangles
+	@param image	The given image
+	@param rects	The vector containing the rectangles
+	@return a vector with submatrice of the given matrice
+*/
 vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	vector<Mat> images;
 	for (const Rect& r : rects) {
