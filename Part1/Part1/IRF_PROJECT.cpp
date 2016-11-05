@@ -45,14 +45,6 @@ Mat loadImage(const string &name) {
 	return im;
 }
 
-
-/*
-bool cmp(const Rect& a, const Rect& b) {
-return a.y <= b.y && a.x <= b.x;
-}
-*/
-
-
 /*
 	Gets the correct rectangles that can be found on the given matrice
 	@param im_rgb	The given image
@@ -153,8 +145,6 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 		}
 	}
 
-
-
 	// determining all the possible rectangles and removing impossible lines based
 	// on the size of rectangles they form
 	// the fields in the rectangles are as follows : p1.x|p1.y|p2.x|p2.y|diag
@@ -199,11 +189,6 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 
 	cout << correctRectangles.size() << " rectangles found !" << endl;
 
-	// Sort to have from top left to down right 
-	//sort(correctRectangles.begin(), correctRectangles.end(), cmp);
-
-
-
 	return correctRectangles;
 }
 
@@ -222,7 +207,11 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	return images;
 }
 
-
+/*
+	Saves the thumbnails with the correct name and file descriptor
+	@param fileName			The name of the file
+	@param subThumbnails	The matrices to save
+*/
 void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails) {
 	const string SAVE_DIR = "results/";
 
