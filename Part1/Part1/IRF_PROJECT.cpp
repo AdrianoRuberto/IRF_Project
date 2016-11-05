@@ -38,47 +38,7 @@ Mat loadImage(const string &name) {
 	return im;
 }
 
-/*
-Draws the lines on an image.
-@param source	The image used for the lines
-@param lines	The lines
-*/
-void drawLines(const Mat& source, const vector<Vec4i>& lines) {
-	static int j = 0;
-	Mat cdst;
-	cvtColor(source, cdst, COLOR_GRAY2BGR);
-	for (size_t i = 0; i < lines.size(); i++) {
-		Vec4i l = lines[i];
-		line(cdst, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 2, CV_AA);
-	}
-
-	imshow("Lines " + to_string(j++), cdst);
-}
-
-/*
- Shows the lines on an image.
- @param source	The image used for the lines
- @param lines	The lines
- */
-void drawRects(const Mat& source, const vector<Rect>& rects) {
-	static int j = 0;
-	Mat cdst;
-	cvtColor(source, cdst, COLOR_GRAY2BGR);
-
-	for (const Rect& r : rects) {
-		rectangle(cdst, r, Scalar(0, 0, 255), 2);
-
-	}
-
-	imshow("Rects " + to_string(j++), cdst);
-
-}
-
-int main(void) {
-	// declaration section
-	string imName = "00000_a.png";
-
-	//----------------------------------------
+void slice(const string& imName) {
 	Mat im_rgb = loadImage(imName);
 	Mat im_gray;
 	cvtColor(im_rgb, im_gray, COLOR_BGR2GRAY);
@@ -117,28 +77,6 @@ int main(void) {
 			max_hist_h = hist_h.at<int>(i);
 		}
 	}
-
-	/*
-	//opening a file for debuging
-	ofstream outfileh("h_hist.txt");
-	ofstream outfilev("v_hist.txt");
-	//outputing the values for debuging
-	//outputing the h_count
-	//outfile << "h_hist = {";
-	for (i = 0; i < im_rows; i++)
-	{
-	outfileh << hist_h.at<int>(i) <<endl;
-	}
-	//outfile << "};" << endl << endl;
-	//outputing the v_count
-	//outfile << "v_hist = {";
-	for (j = 0; j < im_cols; j++)
-	{
-	outfilev << hist_v.at<int>(j) <<endl;
-	}
-	//outfile << "};" << endl << endl;
-
-	*/
 
 	// looking for the maximum value in the accumulated values according to the
 	// vertical axe
@@ -203,22 +141,22 @@ int main(void) {
 	// the fields in the rectangles are as follows : p1.x|p1.y|p2.x|p2.y|diag
 
 	// this table contains all the possibles rectangles
-	Mat rectangles = Mat((vlines.size() - 1) * (hlines.size() - 1), 5, CV_32S);
+	Mat possibleRectangles = Mat((vlines.size() - 1) * (hlines.size() - 1), 5, CV_32S);
 
 	int k = 0;
 	int max_rect_diag = 0;
 	for (int i = 0; i < hlines.size() - 1; i++) {
 		for (int j = 0; j < vlines.size() - 1; ++k, ++j) {
-			rectangles.at<int>(k, 1) = vlines[j];
-			rectangles.at<int>(k, 2) = hlines[i];
-			rectangles.at<int>(k, 3) = vlines[j + 1];
-			rectangles.at<int>(k, 4) = hlines[i + 1];
-			rectangles.at<int>(k, 5) = pow((vlines[j + 1] - vlines[j]), 2) +
+			possibleRectangles.at<int>(k, 1) = vlines[j];
+			possibleRectangles.at<int>(k, 2) = hlines[i];
+			possibleRectangles.at<int>(k, 3) = vlines[j + 1];
+			possibleRectangles.at<int>(k, 4) = hlines[i + 1];
+			possibleRectangles.at<int>(k, 5) = pow((vlines[j + 1] - vlines[j]), 2) +
 				pow((hlines[i + 1] - hlines[i]), 2);
 
 			// looking for the maximum value at each iteration
-			if (rectangles.at<int>(k, 5) > max_rect_diag) {
-				max_rect_diag = rectangles.at<int>(k, 5);
+			if (possibleRectangles.at<int>(k, 5) > max_rect_diag) {
+				max_rect_diag = possibleRectangles.at<int>(k, 5);
 			}
 		}
 	}
@@ -227,28 +165,27 @@ int main(void) {
 	// size)
 	float rect_thresh = (float)(max_rect_diag * RECT_THRESHOLD) / (float)100;
 	Point p1, p2;
-	vector<Rect> rects;
-	for (int i = 0; i < rectangles.rows; i++) {
-		if (rectangles.at<int>(i, 5) > rect_thresh) {
-			p1.x = rectangles.at<int>(i, 1) + COORD_OFFSET;
-			p1.y = rectangles.at<int>(i, 2) + COORD_OFFSET;
-			
-			p2.x = rectangles.at<int>(i, 3) - COORD_OFFSET;
-			p2.y = rectangles.at<int>(i, 4) - COORD_OFFSET;
+	vector<Rect> correctRectangles;
+	for (int i = 0; i < possibleRectangles.rows; i++) {
+		if (possibleRectangles.at<int>(i, 5) > rect_thresh) {
+			p1.x = possibleRectangles.at<int>(i, 1) + COORD_OFFSET;
+			p1.y = possibleRectangles.at<int>(i, 2) + COORD_OFFSET;
 
-			rects.push_back(Rect(p1, p2));
+			p2.x = possibleRectangles.at<int>(i, 3) - COORD_OFFSET;
+			p2.y = possibleRectangles.at<int>(i, 4) - COORD_OFFSET;
+
+			correctRectangles.push_back(Rect(p1, p2));
 		}
 	}
 
-	cout << rects.size() << " Objects found !" << endl;
+	cout << correctRectangles.size() << " rectangles found !" << endl;
 
 	// Draw the rects
-	for (const Rect& r : rects) {
+	for (const Rect& r : correctRectangles) {
 		rectangle(im_rgb, r, Scalar(0, 0, 255), 4);
 	}
 
 	imwrite("im_result.png", im_rgb);
-
 
 	int reduction = 2;
 	Size tailleReduite(im_cols / reduction, im_rows / reduction);
@@ -256,7 +193,10 @@ int main(void) {
 	cv::resize(im_rgb, imreduite, tailleReduite);
 	cv::namedWindow("reduced image", WINDOW_NORMAL);
 	cv::imshow("reduced image", im_rgb);
+}
 
-	cv::waitKey(0);
+int main(void) {
+	slice("00000.png");
+	waitKey(0);
 	return 0;
 }
