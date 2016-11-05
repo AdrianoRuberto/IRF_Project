@@ -179,20 +179,16 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 
 	cout << correctRectangles.size() << " rectangles found !" << endl;
 
-	// Draw the rects
-	
-
-	/*
-	int reduction = 2;
-	Size tailleReduite(im_cols / reduction, im_rows / reduction);
-	Mat imreduite = Mat(tailleReduite, CV_8UC3);
-	cv::resize(im_rgb, imreduite, tailleReduite);
-	cv::namedWindow("reduced image", WINDOW_NORMAL);
-	cv::imshow("reduced image", im_rgb);
-	*/
-	
-
 	return correctRectangles;
+}
+
+vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
+	vector<Mat> images;
+	for (const Rect& r : rects) {
+		images.push_back(image.colRange(r.x, r.x + r.width)
+							  .rowRange(r.y, r.y + r.height));
+	}
+	return images;
 }
 
 int main(void) {
@@ -200,6 +196,21 @@ int main(void) {
 	for (const Rect& r : getRectangles(im_rgb)) {
 		rectangle(im_rgb, r, Scalar(0, 0, 255), 4);
 	}
+
+	int i = 0;
+	for (const Mat& m : slice(im_rgb, getRectangles(im_rgb))) {
+		imshow("Image no " + to_string(i++), m);
+	}
+
+	
+	/*
+	int reduction = 2;
+	Size tailleReduite(im_rgb.cols / reduction, im_rgb.rows / reduction);
+	Mat imreduite = Mat(tailleReduite, CV_8UC3);
+	cv::resize(im_rgb, imreduite, tailleReduite);
+	cv::namedWindow("reduced image", WINDOW_NORMAL);
+	cv::imshow("reduced image", im_rgb);
+	*/
 	waitKey(0);
 	return 0;
 }
