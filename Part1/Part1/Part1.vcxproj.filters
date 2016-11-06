@@ -18,7 +18,7 @@
     <ClCompile Include="histogram.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="squelette_test_opencv.cpp">
+    <ClCompile Include="IRF_PROJECT.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>
