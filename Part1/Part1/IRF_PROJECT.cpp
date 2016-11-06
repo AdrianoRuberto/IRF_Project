@@ -243,11 +243,40 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails)
 	}
 }
 
+
+/*
+	Classifies a cropped icon and returns a descriptive string
+*/
+String classifyCroppedIcon(const Mat& icon) {
+	// proof of concept: classify accident.png
+	cv::Mat result;
+	double currentVal, maxVal;
+	maxVal = -1;
+	Mat accident = loadImage("templates/accident.png");
+	matchTemplate(icon, accident, result, CV_TM_CCOEFF_NORMED);
+	minMaxLoc(result, NULL, &currentVal);
+
+	if (currentVal > maxVal) {
+		maxVal = currentVal;
+	}
+
+	cout << "Probability of match: " << currentVal << endl;
+	system("PAUSE");
+
+	if (maxVal < 0.5) {
+		cout << "error classifying, confidence to low" << endl;
+		return "not_classified";
+	}
+
+	return "oops_wtf";
+}
+
 /*
 	Isolates all the left type images.
-	
+	//TODO return all strings for that page as Array
 */
-void isolateTypeImages(const Mat& image, vector<Rect>& rectangles) {
+void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles) {
+	//TODO strategy for weird rectangle-quantities, general handling for page 22
 	if (rectangles.size() != 35) {
 		cout << "Skipping this image because of bad rectangle count!" << endl;
 		return;
@@ -269,7 +298,7 @@ void isolateTypeImages(const Mat& image, vector<Rect>& rectangles) {
 			arithMeanH = (meanAccumH / 5.0);
 			
 			// Setup a rectangle to define your region of interest
-			// TODO fine-tuning the cropping
+			// TODO fine-tuning the cropping (if not robust enough)
 			cv::Rect myROI((int)(image.cols*0.08), arithMeanY, (int)(image.cols*0.12), arithMeanH);
 
 			// Crop the full image to that image contained by the rectangle myROI
@@ -286,15 +315,7 @@ void isolateTypeImages(const Mat& image, vector<Rect>& rectangles) {
 			meanAccumY = 0;
 			meanAccumH = 0;
 
-			// proof of concept: classify accident.png
-			cv::Mat result;
-			double currentVal, maxVal;
-			Mat accident = loadImage("templates/accident.png");
-			matchTemplate(cropped, accident, result, CV_TM_CCOEFF_NORMED);
-			minMaxLoc(result, NULL, &currentVal);
-
-			cout << "Probability of match: " << currentVal << endl;
-			system("PAUSE");
+			cout << classifyCroppedIcon(cropped) << endl;
 		}
 	}
 }
@@ -309,7 +330,7 @@ int main(void) {
 		if (im_rgb.data != NULL) {
 			cout << filename.str() << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
-			isolateTypeImages(im_rgb, res);
+			isolateAndClassifyIcons(im_rgb, res);
 			if (res.size() >= 5) {
 				saveSubThumbnails(filename.str(), slice(im_rgb, res));
 			}
