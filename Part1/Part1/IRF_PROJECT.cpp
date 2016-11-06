@@ -219,6 +219,7 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails)
 	string scripter = fileName.substr(0, 3);
 	string page = fileName.substr(3, 2);
 
+
 	for (int i = 0; i < subThumbnails.size(); ++i) {
 		// Creating the string
 		string label = "XXX"; // TODO
@@ -242,6 +243,31 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails)
 	}
 }
 
+/*
+	Isolates all the left type images.
+	
+*/
+void isolateTypeImages(Mat& Image, vector<Rect>& rectangles) {
+	if (rectangles.size() != 35) {
+		cout << "Skipping this image because of bad rectangle count!" << endl;
+		return;
+	}
+
+	//get arithmetic mean of all lines
+	int meanAccum = 0;
+	int rectCount = 0;
+	for (const Rect& r : rectangles) {
+		Point arithMean = 0;
+		meanAccum += r.y;
+		meanAccum += r.y + r.height;
+		rectCount++;
+		if (rectCount % 5 == 0) {
+			arithMean = (Point)(meanAccum / 5.0);
+			cout << arithMean << endl;
+		}
+	}
+}
+
 int main(void) {
 	const string PATH_IMGDB = "imgdb/";
 	
@@ -252,6 +278,7 @@ int main(void) {
 		if (im_rgb.data != NULL) {
 			cout << filename.str() << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
+			isolateTypeImages(im_rgb, res);
 			if (res.size() >= 5) {
 				saveSubThumbnails(filename.str(), slice(im_rgb, res));
 			}
