@@ -247,7 +247,7 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails)
 	Isolates all the left type images.
 	
 */
-void isolateTypeImages(Mat& Image, vector<Rect>& rectangles) {
+void isolateTypeImages(const Mat& image, vector<Rect>& rectangles) {
 	if (rectangles.size() != 35) {
 		cout << "Skipping this image because of bad rectangle count!" << endl;
 		return;
@@ -257,13 +257,16 @@ void isolateTypeImages(Mat& Image, vector<Rect>& rectangles) {
 	int meanAccum = 0;
 	int rectCount = 0;
 	for (const Rect& r : rectangles) {
-		Point arithMean = 0;
+		int arithMean = 0;
 		meanAccum += r.y;
 		meanAccum += r.y + r.height;
 		rectCount++;
 		if (rectCount % 5 == 0) {
-			arithMean = (Point)(meanAccum / 5.0);
+			arithMean = (meanAccum / 5.0);
 			cout << arithMean << endl;
+			//imshow("", image.colRange(0, 300).rowRange(max(arithMean-50, 0), min(arithMean+50, image.rows)));
+			imshow("", image.colRange(0, (int)(image.cols*0.2)).rowRange(max(arithMean-20,0),min(arithMean+20, image.rows)));
+			system("PAUSE");
 		}
 	}
 }
