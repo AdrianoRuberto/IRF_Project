@@ -254,18 +254,46 @@ void isolateTypeImages(const Mat& image, vector<Rect>& rectangles) {
 	}
 
 	//get arithmetic mean of all lines
-	int meanAccum = 0;
+	int meanAccumY = 0;
+	int meanAccumH = 0;
 	int rectCount = 0;
 	for (const Rect& r : rectangles) {
-		int arithMean = 0;
-		meanAccum += r.y;
-		meanAccum += r.y + r.height;
+		int arithMeanY = 0;
+		int arithMeanH = 0;
+		meanAccumY += r.y;
+		meanAccumH += r.height;
+		// cout << r.y << endl;
 		rectCount++;
 		if (rectCount % 5 == 0) {
-			arithMean = (meanAccum / 5.0);
-			cout << arithMean << endl;
-			//imshow("", image.colRange(0, 300).rowRange(max(arithMean-50, 0), min(arithMean+50, image.rows)));
-			imshow("", image.colRange(0, (int)(image.cols*0.2)).rowRange(max(arithMean-20,0),min(arithMean+20, image.rows)));
+			arithMeanY = (meanAccumY / 5.0);
+			arithMeanH = (meanAccumH / 5.0);
+			
+			// Setup a rectangle to define your region of interest
+			// TODO fine-tuning the cropping
+			cv::Rect myROI((int)(image.cols*0.08), arithMeanY, (int)(image.cols*0.12), arithMeanH);
+
+			// Crop the full image to that image contained by the rectangle myROI
+			// Note that this doesn't copy the data
+			cv::Mat croppedRef(image, myROI);
+
+			cv::Mat cropped;
+			// Copy the data into new matrix
+			croppedRef.copyTo(cropped);
+			//imwrite("dump.png", cropped);
+			//system("PAUSE");
+			
+			//reset accumulators
+			meanAccumY = 0;
+			meanAccumH = 0;
+
+			// proof of concept: classify accident.png
+			cv::Mat result;
+			double currentVal, maxVal;
+			Mat accident = loadImage("templates/accident.png");
+			matchTemplate(cropped, accident, result, CV_TM_CCOEFF_NORMED);
+			minMaxLoc(result, NULL, &currentVal);
+
+			cout << "Probability of match: " << currentVal << endl;
 			system("PAUSE");
 		}
 	}
