@@ -16,6 +16,7 @@
 #include <math.h>
 #include <iomanip>
 #include <array>
+#include <time.h>
 
 using namespace cv;
 using namespace std;
@@ -426,13 +427,18 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<S
 }
 
 int main(void) {
+	clock_t start_time = clock();
 	const string PATH_IMGDB = "imgdb/";
 	
-	for (int i = 0; i < 30; ++i) {
+	int processed_images = 0;
+	int successful_images = 0;
+	//TODO further improvements through using multithreading
+	for (int i = 0; i < 50; ++i) {
 		stringstream filename;
 		filename << setfill('0') << setw(5) << i << ".png";
 		Mat im_rgb = imread(PATH_IMGDB + filename.str());
 		if (im_rgb.data != NULL) {
+			processed_images++;
 			cout << filename.str() << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
 			if (res.size() == 35) { // TODO what to do with the images with wrong rectangle counts
@@ -441,6 +447,7 @@ int main(void) {
 				//TODO make sure that we have no remnants of the black line by blocking everything
 				// in the sub-images that is not blue
 				saveSubThumbnails(filename.str(), slice(im_rgb, res), icons);
+				successful_images++;
 			}
 			else {
 				cout << "Warning: skipped image because of bad rectangle count" << endl;
@@ -448,6 +455,14 @@ int main(void) {
 		}
 	}
 
+	clock_t end_time = clock();
+	clock_t tot_time = (end_time - start_time);
+	cout << "total execution time:      " << tot_time/1000 << "s" << endl;
+	cout << "total execution time:      " << tot_time / 1000 / 60 << "min ";
+	cout << ((tot_time / 1000) % 60) << "s" << endl;
+	cout << "processed images:          " << processed_images << endl;
+	cout << "successfully proc. img:    " << successful_images << endl;
+	cout << "avg. proc. time per image: " << tot_time / processed_images << "ms" << endl;
 
 	system("PAUSE");
 	return 0;
