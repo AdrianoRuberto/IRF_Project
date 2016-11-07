@@ -3,7 +3,7 @@
 // Projet - première étape
 // thème : Première étape du projet
 // contenu : Pre-processing and image processing
-// auteur : TODO
+// auteur : Emmanuel
 // date : TODO
 //////////////////////////////////////////////////////////////////////////
 
@@ -349,7 +349,7 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<S
 	for (const Rect& r : rectangles) {
 		int arithMeanY = 0;
 		int arithMeanH = 0;
-		meanAccumY += r.y;
+		meanAccumY += r.y;    
 		meanAccumH += r.height;
 		// cout << r.y << endl;
 		rectCount++;
