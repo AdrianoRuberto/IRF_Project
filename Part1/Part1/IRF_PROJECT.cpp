@@ -368,7 +368,7 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<S
 			
 			// Setup a rectangle to define your region of interest
 			// TODO fine-tuning the cropping (if not robust enough)
-			cv::Rect myROI((int)(image.cols*0.08), arithMeanY, (int)(image.cols*0.12), arithMeanH);
+			cv::Rect myROI((int)(image.cols*0.1), arithMeanY, (int)(image.cols*0.06), arithMeanH);
 
 			// Crop the full image to that image contained by the rectangle myROI
 			// Note that this doesn't copy the data
