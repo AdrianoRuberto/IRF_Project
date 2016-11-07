@@ -31,6 +31,9 @@ using namespace std;
 // offset to apply to lines coordinates to avoid taking the borders
 #define COORD_OFFSET 5
 
+//TODO replace this with a proper function
+#define loadIcons icons[iconType] = loadImage(templatepath + iconType + ".png")
+
 /*
 Loads the image.
 If the image can't be loaded, exit the program
@@ -248,27 +251,70 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails)
 	Classifies a cropped icon and returns a descriptive string
 */
 String classifyCroppedIcon(const Mat& icon) {
-	// proof of concept: classify accident.png
+
+	// build map with all icons, hacky, should probably be refactored
+	std::map <string, cv::Mat> icons;
+	cv::String templatepath = "templates/";
+	cv::String iconType;
+
+	iconType = "accident";
+	loadIcons;
+	iconType = "bomb";
+	loadIcons;
+	iconType = "car";
+	loadIcons;
+	iconType = "casualty";
+	loadIcons;
+	iconType = "electricity";
+	loadIcons;
+	iconType = "fire";
+	loadIcons;
+	iconType = "fire_brigade";
+	loadIcons;
+	iconType = "flood";
+	loadIcons;
+	iconType = "gas";
+	loadIcons;
+	iconType = "injury";
+	loadIcons;
+	iconType = "paramedics";
+	loadIcons;
+	iconType = "person";
+	loadIcons;
+	iconType = "police";
+	loadIcons;
+	iconType = "roadblock";
+	loadIcons;
+
+	// go through list of icons and find the best match
 	cv::Mat result;
+	std::map<std::string, cv::Mat>::iterator it, end, res;
 	double currentVal, maxVal;
-	maxVal = -1;
-	Mat accident = loadImage("templates/accident.png");
-	matchTemplate(icon, accident, result, CV_TM_CCOEFF_NORMED);
-	minMaxLoc(result, NULL, &currentVal);
+	maxVal = -1; 
+	end = icons.end();
+	res = end;
 
-	if (currentVal > maxVal) {
-		maxVal = currentVal;
+	for (it = icons.begin(); it != end; it++) {
+		matchTemplate(icon, it->second, result, CV_TM_CCOEFF_NORMED);
+		minMaxLoc(result, NULL, &currentVal);
+		
+		if (currentVal > maxVal) {
+			maxVal = currentVal;
+			res = it;
+		}
 	}
-
-	cout << "Probability of match: " << currentVal << endl;
-	system("PAUSE");
+	
+	
+	//cout << "Probability of match: " << currentVal << endl;
 
 	if (maxVal < 0.5) {
 		cout << "error classifying, confidence to low" << endl;
 		return "not_classified";
 	}
 
-	return "oops_wtf";
+	//return String-descriptor of classified icon
+	//cout << "match: " << res->first << ", probability of match: " << currentVal << endl;
+	return res->first;
 }
 
 /*
