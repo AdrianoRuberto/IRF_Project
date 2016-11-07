@@ -33,10 +33,6 @@ using namespace std;
 // offset to apply to lines coordinates to avoid taking the borders
 #define COORD_OFFSET 5
 
-//TODO replace this with a proper function
-#define loadIcons icons[iconType] = loadImage(templatepath + iconType + ".png")
-#define loadIconTexts icon_texts[iconType] = loadImage(templatepath + iconType + ".png")
-
 /*
 Loads the image.
 If the image can't be loaded, exit the program
@@ -51,6 +47,7 @@ Mat loadImage(const string &name) {
 	}
 	return im;
 }
+
 
 /*
 	Gets the correct rectangles that can be found on the given matrice
@@ -265,64 +262,42 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails,
 }
 
 
+const String TEMPLATE_PATH = "templates/";
+const map<String, Mat> ICONS = {
+	{ "accident", loadImage(TEMPLATE_PATH + "accident.png") },
+	{ "bomb", loadImage(TEMPLATE_PATH + "bomb.png")},
+	{ "car", loadImage(TEMPLATE_PATH + "car.png") },
+	{ "casualty", loadImage(TEMPLATE_PATH + "casualty.png") },
+	{ "electricity", loadImage(TEMPLATE_PATH + "electricity.png") },
+	{ "fire", loadImage(TEMPLATE_PATH + "fire.png") },
+	{ "fire_brigade", loadImage(TEMPLATE_PATH + "fire_brigade.png") },
+	{ "flood", loadImage(TEMPLATE_PATH + "flood.png") },
+	{ "gas", loadImage(TEMPLATE_PATH + "gas.png") },
+	{ "injury", loadImage(TEMPLATE_PATH + "injury.png") },
+	{ "paramedics", loadImage(TEMPLATE_PATH + "paramedics.png") },
+	{ "person", loadImage(TEMPLATE_PATH + "person.png") },
+	{ "police", loadImage(TEMPLATE_PATH + "police.png") },
+	{ "roadblock", loadImage(TEMPLATE_PATH + "roadblock.png") }
+};
+
+const map<String, Mat> ICONS_TEXT = {
+	{ "small", loadImage(TEMPLATE_PATH + "small.png")},
+	{ "medium", loadImage(TEMPLATE_PATH + "medium.png") },
+	{ "large", loadImage(TEMPLATE_PATH + "large.png") }
+};
+
 /*
 	Classifies a cropped icon and returns a descriptive string
 */
 String classifyCroppedIcon(const Mat& icon) {
 
-	// build map with all icons, hacky, should probably be refactored
-	std::map <string, cv::Mat> icons;
-	cv::String templatepath = "templates/";
-	cv::String iconType;
-
-	iconType = "accident";
-	loadIcons;
-	iconType = "bomb";
-	loadIcons;
-	iconType = "car";
-	loadIcons;
-	iconType = "casualty";
-	loadIcons;
-	iconType = "electricity";
-	loadIcons;
-	iconType = "fire";
-	loadIcons;
-	iconType = "fire_brigade";
-	loadIcons;
-	iconType = "flood";
-	loadIcons;
-	iconType = "gas";
-	loadIcons;
-	iconType = "injury";
-	loadIcons;
-	iconType = "paramedics";
-	loadIcons;
-	iconType = "person";
-	loadIcons;
-	iconType = "police";
-	loadIcons;
-	iconType = "roadblock";
-	loadIcons;
-
-	// build map with all text markers
-	std::map <string, cv::Mat> icon_texts;
-
-	iconType = "small";
-	loadIconTexts;
-	iconType = "medium";
-	loadIconTexts;
-	iconType = "large";
-	loadIconTexts;
-
 	// go through list of icons and find the best match
-	cv::Mat result;
-	std::map<std::string, cv::Mat>::iterator it, end, res;
-	double currentVal, maxVal;
-	maxVal = -1; 
-	end = icons.end();
-	res = end;
+	Mat result;
+	double currentVal;
+	double maxVal = -1;
+	auto res = ICONS.end();
 
-	for (it = icons.begin(); it != end; it++) {
+	for (auto it = ICONS.begin(); it != ICONS.end(); it++) {
 		matchTemplate(icon, it->second, result, CV_TM_CCOEFF_NORMED);
 		minMaxLoc(result, NULL, &currentVal);
 		
@@ -332,21 +307,16 @@ String classifyCroppedIcon(const Mat& icon) {
 		}
 	}
 	
-	
 	//cout << "Probability of match: " << currentVal << endl;
-
 	if (maxVal < 0.5) {
 		cout << "error classifying, confidence to low" << endl;
 		return "not_classified";
 	}
 
 	// go through list of icon_texts and find the best match
-	std::map<std::string, cv::Mat>::iterator resT;
 	maxVal = -1;
-	end = icon_texts.end();
-	resT = end;
-
-	for (it = icon_texts.begin(); it != end; it++) {
+	auto resT = ICONS_TEXT.end();
+	for (auto it = ICONS_TEXT.begin(); it != ICONS_TEXT.end(); it++) {
 		matchTemplate(icon, it->second, result, CV_TM_CCOEFF_NORMED);
 		minMaxLoc(result, NULL, &currentVal);
 
@@ -368,17 +338,17 @@ String classifyCroppedIcon(const Mat& icon) {
 	return returnvalue + res->first;
 }
 
+
+
+
 /*
 	Isolates all the left type images.
 */
 void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<String, 7>& result) {
-	result[0] = "failure";
-	result[1] = "failure";
-	result[2] = "failure";
-	result[3] = "failure";
-	result[4] = "failure";
-	result[5] = "failure";
-	result[6] = "failure";
+	for (int i = 0; i < result.size(); ++i) {
+		result[i] = "failure";
+	}
+
 	//TODO strategy for weird rectangle-quantities, general handling for page 22
 	if (rectangles.size() != 35) {
 		cout << "Skipping this image because of bad rectangle count!" << endl;
@@ -441,6 +411,7 @@ int main(void) {
 			processed_images++;
 			cout << filename.str() << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
+
 			if (res.size() == 35) { // TODO what to do with the images with wrong rectangle counts
 				array<String, 7> icons;
 				isolateAndClassifyIcons(im_rgb, res, icons);
