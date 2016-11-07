@@ -226,7 +226,13 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails,
 
 	for (int i = 0; i < subThumbnails.size(); ++i) {
 		// Creating the string
-		string label = iconLabels[i / 5];
+		string label;
+		if (i >= 35) {
+			label = "failure_in_complete_page";
+		}
+		else {
+			label = iconLabels[i / 5];
+		}
 		string row = to_string(i / 5 + 1);
 		string col = to_string((i % 5) + 1);
 		string name = label + "_" + scripter + "_" + page + "_" + row + "_" + col;
@@ -387,7 +393,8 @@ int main(void) {
 			vector<Rect> res = getRectangles(im_rgb);
 			array<String, 7> icons;
 			isolateAndClassifyIcons(im_rgb, res, icons);
-			if (res.size() >= 5) {
+			//if (res.size() >= 5) {
+			if (res.size() >= 5) { // TODO what to do with the images with wrong rectangle counts
 				//TODO make sure that we have no remnants of the black line by blocking everything
 				// in the sub-images that is not blue
 				saveSubThumbnails(filename.str(), slice(im_rgb, res), icons);
