@@ -3,7 +3,7 @@
 // Projet - première étape
 // thème : Première étape du projet
 // contenu : Pre-processing and image processing
-// auteur : Emmanuel
+// auteur : 
 // date : TODO
 //////////////////////////////////////////////////////////////////////////
 
@@ -60,20 +60,29 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 	cvtColor(im_rgb, im_gray, COLOR_BGR2GRAY);
 	int im_rows = im_gray.rows;
 	int im_cols = im_gray.cols;
-
 	// removing the the band on the top of scanned images
-	// this band is located approximatively at the 1/35 of the top
-	int im_noise_band = im_rows / NOISE_BAND_FRAC + 20;
-	for (int i = 0; i < im_noise_band; i++) {
-		for (int j = 0; j < im_cols; j++) {
-			// replacing the noised zone by white pixels
-			im_gray.at<uchar>(i, j) = (uchar)255;
+	int im_noise_band = im_rows / NOISE_BAND_FRAC;
+	for(int i = 0; i < im_noise_band; i++)
+	{
+		for(int j = 0; j < im_cols; j++)
+		{
+			im_gray.at<uchar>(i, j) = (uchar)255; //replacing the noised zone by white pixels
+			im_gray.at<uchar>(im_rows - i - 1, j) = (uchar)255; //replacing the noised zone by white pixels
 		}
 	}
+	//removing the side bands
+	for(int j = 0; j < im_noise_band; j++)
+	{
+		for(int i = 0; i <im_rows; i++)
+		{
+			im_gray.at<uchar>(i, j) = (uchar)255; //replacing the noised zone by white pixels
+			im_gray.at<uchar>(i, im_cols - j - 1) = (uchar)255; //replacing the noised zone by white pixels
+		}
+	}
+
 	// Inverting the image this will be useful when detecting the lines of the 
 	// grid 
 	bitwise_not(im_gray, im_gray);
-
 	// computing the sum of pixels values in the vertical and horizontal
 	// directions
 	Mat hist_v = Mat::zeros(im_cols, 1, CV_32SC1);
@@ -403,14 +412,6 @@ int main(void) {
 	}
 
 
-	/*
-	int reduction = 2;
-	Size tailleReduite(im_rgb.cols / reduction, im_rgb.rows / reduction);
-	Mat imreduite = Mat(tailleReduite, CV_8UC3);
-	cv::resize(im_rgb, imreduite, tailleReduite);
-	cv::namedWindow("reduced image", WINDOW_NORMAL);
-	cv::imshow("reduced image", im_rgb);
-	*/
 	system("PAUSE");
 	return 0;
 }
