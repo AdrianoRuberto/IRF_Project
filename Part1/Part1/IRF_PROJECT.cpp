@@ -15,6 +15,7 @@
 #include <fstream>
 #include <math.h>
 #include <iomanip>
+#include <array>
 
 using namespace cv;
 using namespace std;
@@ -216,7 +217,7 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	@param fileName			The name of the file
 	@param subThumbnails	The matrices to save
 */
-void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails) {
+void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails, array<String, 7> iconLabels) {
 	const string SAVE_DIR = "results/";
 
 	string scripter = fileName.substr(0, 3);
@@ -225,7 +226,7 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails)
 
 	for (int i = 0; i < subThumbnails.size(); ++i) {
 		// Creating the string
-		string label = "XXX"; // TODO
+		string label = iconLabels[i / 5];
 		string row = to_string(i / 5 + 1);
 		string col = to_string((i % 5) + 1);
 		string name = label + "_" + scripter + "_" + page + "_" + row + "_" + col;
@@ -319,9 +320,15 @@ String classifyCroppedIcon(const Mat& icon) {
 
 /*
 	Isolates all the left type images.
-	//TODO return all strings for that page as Array
 */
-void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles) {
+void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<String, 7>& result) {
+	result[0] = "failure";
+	result[1] = "failure";
+	result[2] = "failure";
+	result[3] = "failure";
+	result[4] = "failure";
+	result[5] = "failure";
+	result[6] = "failure";
 	//TODO strategy for weird rectangle-quantities, general handling for page 22
 	if (rectangles.size() != 35) {
 		cout << "Skipping this image because of bad rectangle count!" << endl;
@@ -332,6 +339,7 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles) {
 	int meanAccumY = 0;
 	int meanAccumH = 0;
 	int rectCount = 0;
+	int lineCount = 0;
 	for (const Rect& r : rectangles) {
 		int arithMeanY = 0;
 		int arithMeanH = 0;
@@ -361,7 +369,8 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles) {
 			meanAccumY = 0;
 			meanAccumH = 0;
 
-			cout << classifyCroppedIcon(cropped) << endl;
+			result[lineCount] = classifyCroppedIcon(cropped);
+			lineCount++;
 		}
 	}
 }
@@ -369,16 +378,17 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles) {
 int main(void) {
 	const string PATH_IMGDB = "imgdb/";
 	
-	for (int i = 0; i < 30; ++i) {
+	for (int i = 0; i < 110; ++i) {
 		stringstream filename;
 		filename << setfill('0') << setw(5) << i << ".png";
 		Mat im_rgb = imread(PATH_IMGDB + filename.str());
 		if (im_rgb.data != NULL) {
 			cout << filename.str() << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
-			isolateAndClassifyIcons(im_rgb, res);
+			array<String, 7> icons;
+			isolateAndClassifyIcons(im_rgb, res, icons);
 			if (res.size() >= 5) {
-				saveSubThumbnails(filename.str(), slice(im_rgb, res));
+				saveSubThumbnails(filename.str(), slice(im_rgb, res), icons);
 			}
 		}
 	}
