@@ -409,6 +409,7 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<S
 			cv::Mat croppedRef(image, myROI);
 
 			cv::Mat cropped;
+			//TODO is it faster to not copy?
 			// Copy the data into new matrix
 			croppedRef.copyTo(cropped);
 			//imwrite("dump.png", cropped);
