@@ -378,7 +378,7 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<S
 int main(void) {
 	const string PATH_IMGDB = "imgdb/";
 	
-	for (int i = 0; i < 110; ++i) {
+	for (int i = 0; i < 30; ++i) {
 		stringstream filename;
 		filename << setfill('0') << setw(5) << i << ".png";
 		Mat im_rgb = imread(PATH_IMGDB + filename.str());
@@ -388,6 +388,8 @@ int main(void) {
 			array<String, 7> icons;
 			isolateAndClassifyIcons(im_rgb, res, icons);
 			if (res.size() >= 5) {
+				//TODO make sure that we have no remnants of the black line by blocking everything
+				// in the sub-images that is not blue
 				saveSubThumbnails(filename.str(), slice(im_rgb, res), icons);
 			}
 		}
