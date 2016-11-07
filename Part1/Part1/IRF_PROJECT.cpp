@@ -34,6 +34,7 @@ using namespace std;
 
 //TODO replace this with a proper function
 #define loadIcons icons[iconType] = loadImage(templatepath + iconType + ".png")
+#define loadIconTexts icon_texts[iconType] = loadImage(templatepath + iconType + ".png")
 
 /*
 Loads the image.
@@ -302,6 +303,16 @@ String classifyCroppedIcon(const Mat& icon) {
 	iconType = "roadblock";
 	loadIcons;
 
+	// build map with all text markers
+	std::map <string, cv::Mat> icon_texts;
+
+	iconType = "small";
+	loadIconTexts;
+	iconType = "medium";
+	loadIconTexts;
+	iconType = "large";
+	loadIconTexts;
+
 	// go through list of icons and find the best match
 	cv::Mat result;
 	std::map<std::string, cv::Mat>::iterator it, end, res;
@@ -328,9 +339,32 @@ String classifyCroppedIcon(const Mat& icon) {
 		return "not_classified";
 	}
 
+	// go through list of icon_texts and find the best match
+	std::map<std::string, cv::Mat>::iterator resT;
+	maxVal = -1;
+	end = icon_texts.end();
+	resT = end;
+
+	for (it = icon_texts.begin(); it != end; it++) {
+		matchTemplate(icon, it->second, result, CV_TM_CCOEFF_NORMED);
+		minMaxLoc(result, NULL, &currentVal);
+
+		if (currentVal > maxVal) {
+			maxVal = currentVal;
+			resT = it;
+		}
+	}
+
+
+	//TODO seperate this into two return values (we need it separated)
+	String returnvalue = "";
+	if (maxVal > 0.5) {
+		returnvalue = resT->first + "_";
+	}
+
 	//return String-descriptor of classified icon
 	//cout << "match: " << res->first << ", probability of match: " << currentVal << endl;
-	return res->first;
+	return returnvalue + res->first;
 }
 
 /*
