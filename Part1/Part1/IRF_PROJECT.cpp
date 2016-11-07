@@ -400,13 +400,15 @@ int main(void) {
 		if (im_rgb.data != NULL) {
 			cout << filename.str() << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
-			array<String, 7> icons;
-			isolateAndClassifyIcons(im_rgb, res, icons);
-			//if (res.size() >= 5) {
-			if (res.size() >= 5) { // TODO what to do with the images with wrong rectangle counts
+			if (res.size() == 35) { // TODO what to do with the images with wrong rectangle counts
+				array<String, 7> icons;
+				isolateAndClassifyIcons(im_rgb, res, icons);
 				//TODO make sure that we have no remnants of the black line by blocking everything
 				// in the sub-images that is not blue
 				saveSubThumbnails(filename.str(), slice(im_rgb, res), icons);
+			}
+			else {
+				cout << "Warning: skipped image because of bad rectangle count" << endl;
 			}
 		}
 	}
