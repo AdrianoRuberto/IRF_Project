@@ -225,7 +225,7 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	@param fileName			The name of the file
 	@param subThumbnails	The matrices to save
 */
-void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails, array<String, 7> iconLabels) {
+void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails, array<array<String, 2>, 7> iconLabels) {
 	const string SAVE_DIR = "results/";
 
 	string scripter = fileName.substr(0, 3);
@@ -234,13 +234,7 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails,
 
 	for (int i = 0; i < subThumbnails.size(); ++i) {
 		// Creating the string
-		string label;
-		if (i >= 35) {
-			label = "failure_in_complete_page";
-		}
-		else {
-			label = iconLabels[i / 5];
-		}
+		string label = iconLabels[i / 5][0];
 		string row = to_string(i / 5 + 1);
 		string col = to_string((i % 5) + 1);
 		string name = label + "_" + scripter + "_" + page + "_" + row + "_" + col;
@@ -257,6 +251,9 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails,
 		file << "page " << page << "\n";
 		file << "row " << row << "\n";
 		file << "col " << col << "\n";
+		if (!iconLabels[i / 5][1].empty()) {
+			file << "size " + iconLabels[i / 5][1];
+		}
 		file.close();
 	}
 }
@@ -287,68 +284,30 @@ const map<String, Mat> ICONS_TEXT = {
 };
 
 /*
-	Classifies a cropped icon and returns a descriptive string
+Classifies a cropped icon and returns a descriptive string
 */
-String classifyCroppedIcon(const Mat& icon) {
-
-	// go through list of icons and find the best match
+String classifyCroppedIcon(const Mat& im, const map<String, Mat>& icons) {
 	Mat result;
 	double currentVal;
 	double maxVal = -1;
-	auto res = ICONS.end();
-
-	for (auto it = ICONS.begin(); it != ICONS.end(); it++) {
-		matchTemplate(icon, it->second, result, CV_TM_CCOEFF_NORMED);
-		minMaxLoc(result, NULL, &currentVal);
-		
-		if (currentVal > maxVal) {
-			maxVal = currentVal;
-			res = it;
-		}
-	}
-	
-	//cout << "Probability of match: " << currentVal << endl;
-	if (maxVal < 0.5) {
-		cout << "error classifying, confidence to low" << endl;
-		return "not_classified";
-	}
-
-	// go through list of icon_texts and find the best match
-	maxVal = -1;
-	auto resT = ICONS_TEXT.end();
-	for (auto it = ICONS_TEXT.begin(); it != ICONS_TEXT.end(); it++) {
-		matchTemplate(icon, it->second, result, CV_TM_CCOEFF_NORMED);
+	String res = "";
+	for (auto i : icons) {
+		matchTemplate(im, i.second, result, CV_TM_CCOEFF_NORMED);
 		minMaxLoc(result, NULL, &currentVal);
 
-		if (currentVal > maxVal) {
+		if (currentVal >= 0.5 && currentVal > maxVal) {
 			maxVal = currentVal;
-			resT = it;
+			res = i.first;
 		}
 	}
 
-
-	//TODO seperate this into two return values (we need it separated)
-	String returnvalue = "";
-	if (maxVal > 0.5) {
-		returnvalue = resT->first + "_";
-	}
-
-	//return String-descriptor of classified icon
-	//cout << "match: " << res->first << ", probability of match: " << currentVal << endl;
-	return returnvalue + res->first;
+	return res;
 }
-
-
-
 
 /*
 	Isolates all the left type images.
 */
-void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<String, 7>& result) {
-	for (int i = 0; i < result.size(); ++i) {
-		result[i] = "failure";
-	}
-
+void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<array<String, 2>, 7>& result) {
 	//TODO strategy for weird rectangle-quantities, general handling for page 22
 	if (rectangles.size() != 35) {
 		cout << "Skipping this image because of bad rectangle count!" << endl;
@@ -390,7 +349,8 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<S
 			meanAccumY = 0;
 			meanAccumH = 0;
 
-			result[lineCount] = classifyCroppedIcon(cropped);
+			result[lineCount][0] = classifyCroppedIcon(cropped, ICONS);
+			result[lineCount][1] = classifyCroppedIcon(cropped, ICONS_TEXT);
 			lineCount++;
 		}
 	}
@@ -413,7 +373,8 @@ int main(void) {
 			vector<Rect> res = getRectangles(im_rgb);
 
 			if (res.size() == 35) { // TODO what to do with the images with wrong rectangle counts
-				array<String, 7> icons;
+				array<array<String, 2>, 7> icons;
+
 				isolateAndClassifyIcons(im_rgb, res, icons);
 				//TODO make sure that we have no remnants of the black line by blocking everything
 				// in the sub-images that is not blue
