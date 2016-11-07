@@ -16,6 +16,7 @@
 #include <math.h>
 #include <iomanip>
 #include <array>
+#include <time.h>
 
 using namespace cv;
 using namespace std;
@@ -34,6 +35,7 @@ using namespace std;
 
 //TODO replace this with a proper function
 #define loadIcons icons[iconType] = loadImage(templatepath + iconType + ".png")
+#define loadIconTexts icon_texts[iconType] = loadImage(templatepath + iconType + ".png")
 
 /*
 Loads the image.
@@ -302,6 +304,16 @@ String classifyCroppedIcon(const Mat& icon) {
 	iconType = "roadblock";
 	loadIcons;
 
+	// build map with all text markers
+	std::map <string, cv::Mat> icon_texts;
+
+	iconType = "small";
+	loadIconTexts;
+	iconType = "medium";
+	loadIconTexts;
+	iconType = "large";
+	loadIconTexts;
+
 	// go through list of icons and find the best match
 	cv::Mat result;
 	std::map<std::string, cv::Mat>::iterator it, end, res;
@@ -328,9 +340,32 @@ String classifyCroppedIcon(const Mat& icon) {
 		return "not_classified";
 	}
 
+	// go through list of icon_texts and find the best match
+	std::map<std::string, cv::Mat>::iterator resT;
+	maxVal = -1;
+	end = icon_texts.end();
+	resT = end;
+
+	for (it = icon_texts.begin(); it != end; it++) {
+		matchTemplate(icon, it->second, result, CV_TM_CCOEFF_NORMED);
+		minMaxLoc(result, NULL, &currentVal);
+
+		if (currentVal > maxVal) {
+			maxVal = currentVal;
+			resT = it;
+		}
+	}
+
+
+	//TODO seperate this into two return values (we need it separated)
+	String returnvalue = "";
+	if (maxVal > 0.5) {
+		returnvalue = resT->first + "_";
+	}
+
 	//return String-descriptor of classified icon
 	//cout << "match: " << res->first << ", probability of match: " << currentVal << endl;
-	return res->first;
+	return returnvalue + res->first;
 }
 
 /*
@@ -368,13 +403,14 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<S
 			
 			// Setup a rectangle to define your region of interest
 			// TODO fine-tuning the cropping (if not robust enough)
-			cv::Rect myROI((int)(image.cols*0.08), arithMeanY, (int)(image.cols*0.12), arithMeanH);
+			cv::Rect myROI((int)(image.cols*0.1), arithMeanY, (int)(image.cols*0.06), arithMeanH);
 
 			// Crop the full image to that image contained by the rectangle myROI
 			// Note that this doesn't copy the data
 			cv::Mat croppedRef(image, myROI);
 
 			cv::Mat cropped;
+			//TODO is it faster to not copy?
 			// Copy the data into new matrix
 			croppedRef.copyTo(cropped);
 			//imwrite("dump.png", cropped);
@@ -391,26 +427,42 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<S
 }
 
 int main(void) {
+	clock_t start_time = clock();
 	const string PATH_IMGDB = "imgdb/";
 	
-	for (int i = 0; i < 30; ++i) {
+	int processed_images = 0;
+	int successful_images = 0;
+	//TODO further improvements through using multithreading
+	for (int i = 0; i < 50; ++i) {
 		stringstream filename;
 		filename << setfill('0') << setw(5) << i << ".png";
 		Mat im_rgb = imread(PATH_IMGDB + filename.str());
 		if (im_rgb.data != NULL) {
+			processed_images++;
 			cout << filename.str() << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
-			array<String, 7> icons;
-			isolateAndClassifyIcons(im_rgb, res, icons);
-			//if (res.size() >= 5) {
-			if (res.size() >= 5) { // TODO what to do with the images with wrong rectangle counts
+			if (res.size() == 35) { // TODO what to do with the images with wrong rectangle counts
+				array<String, 7> icons;
+				isolateAndClassifyIcons(im_rgb, res, icons);
 				//TODO make sure that we have no remnants of the black line by blocking everything
 				// in the sub-images that is not blue
 				saveSubThumbnails(filename.str(), slice(im_rgb, res), icons);
+				successful_images++;
+			}
+			else {
+				cout << "Warning: skipped image because of bad rectangle count" << endl;
 			}
 		}
 	}
 
+	clock_t end_time = clock();
+	clock_t tot_time = (end_time - start_time);
+	cout << "total execution time:      " << tot_time/1000 << "s" << endl;
+	cout << "total execution time:      " << tot_time / 1000 / 60 << "min ";
+	cout << ((tot_time / 1000) % 60) << "s" << endl;
+	cout << "processed images:          " << processed_images << endl;
+	cout << "successfully proc. img:    " << successful_images << endl;
+	cout << "avg. proc. time per image: " << tot_time / processed_images << "ms" << endl;
 
 	system("PAUSE");
 	return 0;
