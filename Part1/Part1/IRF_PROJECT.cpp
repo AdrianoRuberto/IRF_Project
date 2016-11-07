@@ -251,9 +251,7 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails,
 		file << "page " << page << "\n";
 		file << "row " << row << "\n";
 		file << "col " << col << "\n";
-		if (!iconLabels[i / 5][1].empty()) {
-			file << "size " + iconLabels[i / 5][1];
-		}
+		file << "size " + iconLabels[i / 5][1];
 		file.close();
 	}
 }
