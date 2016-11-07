@@ -15,3 +15,10 @@
 ## helpful links
 * [Tutorial on something very similar](http://blog.ayoungprogrammer.com/2013/04/tutorial-detecting-multiple-rectangles.html/)
 * [HoughLinesP](http://docs.opencv.org/2.4/modules/imgproc/doc/feature_detection.html?highlight=houghlinesp#houghlinesp)
+
+## similar projects
+* [mlorant/IRF-Pictos](https://github.com/mlorant/IRF-Pictos)
+* [angeleg/ProjetIRF](https://github.com/angeleg/ProjetIRF)
+* [XavierF56/IRF](https://github.com/XavierF56/IRF)
+* [opirf/opirf](https://github.com/opirf/opirf)
+
