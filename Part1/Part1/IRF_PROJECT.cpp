@@ -15,6 +15,7 @@
 #include <fstream>
 #include <math.h>
 #include <iomanip>
+#include <array>
 
 using namespace cv;
 using namespace std;
@@ -30,6 +31,9 @@ using namespace std;
 
 // offset to apply to lines coordinates to avoid taking the borders
 #define COORD_OFFSET 5
+
+//TODO replace this with a proper function
+#define loadIcons icons[iconType] = loadImage(templatepath + iconType + ".png")
 
 /*
 Loads the image.
@@ -213,15 +217,22 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	@param fileName			The name of the file
 	@param subThumbnails	The matrices to save
 */
-void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails) {
+void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails, array<String, 7> iconLabels) {
 	const string SAVE_DIR = "results/";
 
 	string scripter = fileName.substr(0, 3);
 	string page = fileName.substr(3, 2);
 
+
 	for (int i = 0; i < subThumbnails.size(); ++i) {
 		// Creating the string
-		string label = "XXX"; // TODO
+		string label;
+		if (i >= 35) {
+			label = "failure_in_complete_page";
+		}
+		else {
+			label = iconLabels[i / 5];
+		}
 		string row = to_string(i / 5 + 1);
 		string col = to_string((i % 5) + 1);
 		string name = label + "_" + scripter + "_" + page + "_" + row + "_" + col;
@@ -242,6 +253,134 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails)
 	}
 }
 
+
+/*
+	Classifies a cropped icon and returns a descriptive string
+*/
+String classifyCroppedIcon(const Mat& icon) {
+
+	// build map with all icons, hacky, should probably be refactored
+	std::map <string, cv::Mat> icons;
+	cv::String templatepath = "templates/";
+	cv::String iconType;
+
+	iconType = "accident";
+	loadIcons;
+	iconType = "bomb";
+	loadIcons;
+	iconType = "car";
+	loadIcons;
+	iconType = "casualty";
+	loadIcons;
+	iconType = "electricity";
+	loadIcons;
+	iconType = "fire";
+	loadIcons;
+	iconType = "fire_brigade";
+	loadIcons;
+	iconType = "flood";
+	loadIcons;
+	iconType = "gas";
+	loadIcons;
+	iconType = "injury";
+	loadIcons;
+	iconType = "paramedics";
+	loadIcons;
+	iconType = "person";
+	loadIcons;
+	iconType = "police";
+	loadIcons;
+	iconType = "roadblock";
+	loadIcons;
+
+	// go through list of icons and find the best match
+	cv::Mat result;
+	std::map<std::string, cv::Mat>::iterator it, end, res;
+	double currentVal, maxVal;
+	maxVal = -1; 
+	end = icons.end();
+	res = end;
+
+	for (it = icons.begin(); it != end; it++) {
+		matchTemplate(icon, it->second, result, CV_TM_CCOEFF_NORMED);
+		minMaxLoc(result, NULL, &currentVal);
+		
+		if (currentVal > maxVal) {
+			maxVal = currentVal;
+			res = it;
+		}
+	}
+	
+	
+	//cout << "Probability of match: " << currentVal << endl;
+
+	if (maxVal < 0.5) {
+		cout << "error classifying, confidence to low" << endl;
+		return "not_classified";
+	}
+
+	//return String-descriptor of classified icon
+	//cout << "match: " << res->first << ", probability of match: " << currentVal << endl;
+	return res->first;
+}
+
+/*
+	Isolates all the left type images.
+*/
+void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<String, 7>& result) {
+	result[0] = "failure";
+	result[1] = "failure";
+	result[2] = "failure";
+	result[3] = "failure";
+	result[4] = "failure";
+	result[5] = "failure";
+	result[6] = "failure";
+	//TODO strategy for weird rectangle-quantities, general handling for page 22
+	if (rectangles.size() != 35) {
+		cout << "Skipping this image because of bad rectangle count!" << endl;
+		return;
+	}
+
+	//get arithmetic mean of all lines
+	int meanAccumY = 0;
+	int meanAccumH = 0;
+	int rectCount = 0;
+	int lineCount = 0;
+	for (const Rect& r : rectangles) {
+		int arithMeanY = 0;
+		int arithMeanH = 0;
+		meanAccumY += r.y;
+		meanAccumH += r.height;
+		// cout << r.y << endl;
+		rectCount++;
+		if (rectCount % 5 == 0) {
+			arithMeanY = (meanAccumY / 5.0);
+			arithMeanH = (meanAccumH / 5.0);
+			
+			// Setup a rectangle to define your region of interest
+			// TODO fine-tuning the cropping (if not robust enough)
+			cv::Rect myROI((int)(image.cols*0.08), arithMeanY, (int)(image.cols*0.12), arithMeanH);
+
+			// Crop the full image to that image contained by the rectangle myROI
+			// Note that this doesn't copy the data
+			cv::Mat croppedRef(image, myROI);
+
+			cv::Mat cropped;
+			// Copy the data into new matrix
+			croppedRef.copyTo(cropped);
+			//imwrite("dump.png", cropped);
+			//system("PAUSE");
+			
+			//reset accumulators
+			meanAccumY = 0;
+			meanAccumH = 0;
+
+			result[lineCount] = classifyCroppedIcon(cropped);
+			lineCount++;
+		}
+	}
+}
+
 int main(void) {
 	const string PATH_IMGDB = "imgdb/";
 	
@@ -252,8 +391,13 @@ int main(void) {
 		if (im_rgb.data != NULL) {
 			cout << filename.str() << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
-			if (res.size() >= 5) {
-				saveSubThumbnails(filename.str(), slice(im_rgb, res));
+			array<String, 7> icons;
+			isolateAndClassifyIcons(im_rgb, res, icons);
+			//if (res.size() >= 5) {
+			if (res.size() >= 5) { // TODO what to do with the images with wrong rectangle counts
+				//TODO make sure that we have no remnants of the black line by blocking everything
+				// in the sub-images that is not blue
+				saveSubThumbnails(filename.str(), slice(im_rgb, res), icons);
 			}
 		}
 	}
