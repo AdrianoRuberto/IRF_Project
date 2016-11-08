@@ -404,7 +404,8 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 
 			// Setup a rectangle to define your region of interest
 			// TODO fine-tuning the cropping (if not robust enough)
-			cv::Rect myROI((int)(image.cols*0.1), arithMeanY, (int)(image.cols*0.06), arithMeanH);
+			cv::Rect myROI(rectangles[rectCount-5].x - (int)(image.cols*0.15), arithMeanY, (int)(image.cols*0.08), arithMeanH);
+			//
 
 			// Crop the full image to that image contained by the rectangle myROI
 			// Note that this doesn't copy the data
@@ -414,8 +415,6 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 			//TODO is it faster to not copy?
 			// Copy the data into new matrix
 			croppedRef.copyTo(cropped);
-			//imwrite("dump.png", cropped);
-			//system("PAUSE");
 
 			//reset accumulators
 			meanAccumY = 0;
@@ -423,6 +422,11 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 
 			result[lineCount][0] = classifyCroppedIcon(cropped, ICONS);
 			result[lineCount][1] = classifyCroppedIcon(cropped, ICONS_TEXT);
+			if (result[lineCount][0].empty()) {
+				//inspect wrong recognition
+				imwrite("dump.png", cropped);
+				system("PAUSE");
+			}
 			lineCount++;
 		}
 	}
@@ -436,7 +440,7 @@ int main(void) {
 	int processed_images = 0;
 	int successful_images = 0;
 	//TODO further improvements through using multithreading
-	for (int i = 2600; i < 3500; ++i) {
+	for (int i = 0; i < 3500; ++i) {
 		stringstream filename;
 		filename << setfill('0') << setw(5) << i << ".png";
 		Mat im_rgb = imread(PATH_IMGDB + filename.str());
