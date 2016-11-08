@@ -288,8 +288,17 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	vector<Mat> images;
 	for (const Rect& r : rects) {
-		images.push_back(image.colRange(r.x, r.x + r.width)
-			.rowRange(r.y, r.y + r.height));
+		Mat image_cropped = image.colRange(r.x, r.x + r.width).rowRange(r.y, r.y + r.height);
+		computeHistogram("rectangle", image_cropped);
+		Mat bgr[3];   //destination array
+		split(image_cropped, bgr);//split source
+
+		//Note: OpenCV uses BGR color order
+		imwrite("blue.png", bgr[0]); //blue channel
+		imwrite("green.png", bgr[1]); //green channel
+		imwrite("red.png", bgr[2]); //red channel
+		system("PAUSE");
+		images.push_back(image);
 	}
 	return images;
 }
