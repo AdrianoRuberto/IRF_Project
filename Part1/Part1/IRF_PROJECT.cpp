@@ -32,12 +32,18 @@ using namespace std;
 
 // offset to apply to lines coordinates to avoid taking the borders
 #define COORD_OFFSET 5
-#define BLACK_SBAR_FRAC_N 2 //we divide the image by 2 according to the vertical direction
-#define BLACK_SBAR_FRAC_M 5//we take the 1/5 of the image regarding rows
 
+// Divide the image by 2 according to the vertical direction
+#define BLACK_SBAR_FRAC_N 2 
 
-#define NOISE_BAND_FRAC 20 // upper band to be removed in the input images
-#define ICONS_BAND_FRAC 6 // the icons are located in the 1/6 left of the image
+// We take the 1/5 of the image regarding rows
+#define BLACK_SBAR_FRAC_M 5
+
+// Upper band to be removed in the input images
+#define NOISE_BAND_FRAC 20
+
+// The icons are located in the 1/6 left of the image
+#define ICONS_BAND_FRAC 6 
 
 
 /*
@@ -55,50 +61,60 @@ Mat loadImage(const string &name) {
 	return im;
 }
 
+/*
+	Rotates the original image to make it straight. We look for the band up in
+	the image to look for the longest line we use the canny filter to detect
+	edges and hough transform to detect straight lines
+	@param im_gray		The original gray image
+	@param im_rotated	The result of the rotation
+	@return the degree of the rotation
+*/
 double rotation(const Mat& im_gray, Mat& im_rotated)
 {
 	int im_rows = im_gray.rows;
 	int im_cols = im_gray.cols;
-	/*Rotation of the original image to make it straight*/
-	/*We look for the band up in the image to look for the longest line*/
-	/*we use the canny filter to detect edges and hough transform to detect straight lines*/
-	//first we take the upper portion of the image where the black band is located
+
+	// First we take the upper portion of the image where the black band is 
+	// located
 	int solid_bar_rows = im_rows / BLACK_SBAR_FRAC_M;
 	int solid_bar_cols = im_cols / BLACK_SBAR_FRAC_N;
 	int noise_zone_rows = im_rows / NOISE_BAND_FRAC;
 	int noise_zone_cols = im_cols / NOISE_BAND_FRAC;
-	/*we take a reference on the zone containing the solid bar*/
+	// We take a reference on the zone containing the solid bar
 	Mat im_bar_zone = im_gray(Range(noise_zone_rows, solid_bar_rows), Range(solid_bar_cols, im_cols - noise_zone_cols));
 	Mat im_canny_edges;
 	Canny(im_bar_zone, im_canny_edges, 50, 200, 3);
 	vector<Vec4i> hough_lines;
-	//the HoughLineP is called with an angular resolution of 0.1 degree
+
+	// The HoughLineP is called with an angular resolution of 0.1 degree
 	HoughLinesP(im_canny_edges, hough_lines, 1, CV_PI / 1800, 50, 50, 10);
-	int best_line_pos;//position of the longest line in the line's vector
+	int best_line_pos; //position of the longest line in the line's vector
 	float max_norm = 0;
 	float line_norm;
-	for (int i = 0; i < hough_lines.size(); i++)
-	{
+	for (int i = 0; i < hough_lines.size(); i++) {
 		Vec4i l = hough_lines[i];
 		line_norm = pow((l[2] - l[0]), 2) + pow((l[3] - l[1]), 2);
-		if (line_norm > max_norm)
-		{
+		if (line_norm > max_norm) {
 			max_norm = line_norm;
 			best_line_pos = i;
-
 		}
 	}
 
-	//at the end of the loop we have the longest line
-	//calculating the angle between the line and a virtual straight horizontal line
+	// At the end of the loop we have the longest line
+	// Calculating the angle between the line and a virtual straight horizontal 
+	// line
 	Vec4i best_line = hough_lines[best_line_pos];
 	double rot_angle = atan((double)(best_line[3] - best_line[1]) / (double)(best_line[2] - best_line[0]));
-	rot_angle = rot_angle*(180 / CV_PI);//conversion on the angle from rad to degree
-	cout << "the image is rotated of : " << rot_angle << "degrees" << endl;
+
+	// Conversion on the angle from rad to degree
+	rot_angle = rot_angle*(180 / CV_PI);
+
 	//getting the rotation matrix with the image center as rotation axe
 	Mat rot_mat = getRotationMatrix2D(Point2f(im_cols / 2, im_rows / 2), rot_angle, 1);
+
 	//rotation of the image
 	warpAffine(im_gray, im_rotated, rot_mat, im_gray.size());
+
 	return rot_angle;
 }
 
@@ -113,24 +129,24 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 	int im_rows = im_gray.rows;
 	int im_cols = im_gray.cols;
 
-	rotation(im_gray, im_gray);
+	cout << "rotated of : " << rotation(im_gray, im_gray) << "deg | ";
+	
 	// removing the the band on the top of scanned images
+	// replacing the noised zone by white pixels
 	int im_noise_band = im_rows / NOISE_BAND_FRAC;
-	for(int i = 0; i < im_noise_band; i++)
-	{
-		for(int j = 0; j < im_cols; j++)
-		{
-			im_gray.at<uchar>(i, j) = (uchar)255; //replacing the noised zone by white pixels
-			im_gray.at<uchar>(im_rows - i - 1, j) = (uchar)255; //replacing the noised zone by white pixels
+	for (int i = 0; i < im_noise_band; i++) {
+		for (int j = 0; j < im_cols; j++) {
+			im_gray.at<uchar>(i, j) = (uchar)255; 
+			im_gray.at<uchar>(im_rows - i - 1, j) = (uchar)255;
 		}
 	}
+
 	//removing the side bands
-	for(int j = 0; j < im_noise_band; j++)
-	{
-		for(int i = 0; i <im_rows; i++)
-		{
-			im_gray.at<uchar>(i, j) = (uchar)255; //replacing the noised zone by white pixels
-			im_gray.at<uchar>(i, im_cols - j - 1) = (uchar)255; //replacing the noised zone by white pixels
+	//replacing the noised zone by white pixels
+	for (int j = 0; j < im_noise_band; j++) {
+		for (int i = 0; i < im_rows; i++) {
+			im_gray.at<uchar>(i, j) = (uchar)255; 
+			im_gray.at<uchar>(i, im_cols - j - 1) = (uchar)255; 
 		}
 	}
 
@@ -270,7 +286,7 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	vector<Mat> images;
 	for (const Rect& r : rects) {
 		images.push_back(image.colRange(r.x, r.x + r.width)
-							  .rowRange(r.y, r.y + r.height));
+			.rowRange(r.y, r.y + r.height));
 	}
 	return images;
 }
@@ -293,7 +309,7 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails,
 		string row = to_string(i / 5 + 1);
 		string col = to_string((i % 5) + 1);
 		string name = label + "_" + scripter + "_" + page + "_" + row + "_" + col;
-		
+
 		// Save the thumbnails
 		imwrite(SAVE_DIR + name + ".png", subThumbnails.at(i));
 
@@ -375,14 +391,14 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 	for (const Rect& r : rectangles) {
 		int arithMeanY = 0;
 		int arithMeanH = 0;
-		meanAccumY += r.y;    
+		meanAccumY += r.y;
 		meanAccumH += r.height;
 		// cout << r.y << endl;
 		rectCount++;
 		if (rectCount % 5 == 0) {
 			arithMeanY = (meanAccumY / 5.0);
 			arithMeanH = (meanAccumH / 5.0);
-			
+
 			// Setup a rectangle to define your region of interest
 			// TODO fine-tuning the cropping (if not robust enough)
 			cv::Rect myROI((int)(image.cols*0.1), arithMeanY, (int)(image.cols*0.06), arithMeanH);
@@ -397,7 +413,7 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 			croppedRef.copyTo(cropped);
 			//imwrite("dump.png", cropped);
 			//system("PAUSE");
-			
+
 			//reset accumulators
 			meanAccumY = 0;
 			meanAccumH = 0;
@@ -413,11 +429,11 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 int main(void) {
 	clock_t start_time = clock();
 	const string PATH_IMGDB = "imgdb/";
-	
+
 	int processed_images = 0;
 	int successful_images = 0;
 	//TODO further improvements through using multithreading
-	for (int i = 0; i < 50; ++i) {
+	for (int i = 2600; i < 3500; ++i) {
 		stringstream filename;
 		filename << setfill('0') << setw(5) << i << ".png";
 		Mat im_rgb = imread(PATH_IMGDB + filename.str());
@@ -443,7 +459,7 @@ int main(void) {
 
 	clock_t end_time = clock();
 	clock_t tot_time = (end_time - start_time);
-	cout << "total execution time:      " << tot_time/1000 << "s" << endl;
+	cout << "total execution time:      " << tot_time / 1000 << "s" << endl;
 	cout << "total execution time:      " << tot_time / 1000 / 60 << "min ";
 	cout << ((tot_time / 1000) % 60) << "s" << endl;
 	cout << "processed images:          " << processed_images << endl;
