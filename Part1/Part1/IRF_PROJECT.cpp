@@ -289,16 +289,15 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	vector<Mat> images;
 	for (const Rect& r : rects) {
 		Mat image_cropped = image.colRange(r.x, r.x + r.width).rowRange(r.y, r.y + r.height);
-		computeHistogram("rectangle", image_cropped);
-		Mat bgr[3];   //destination array
-		split(image_cropped, bgr);//split source
-
-		//Note: OpenCV uses BGR color order
-		imwrite("blue.png", bgr[0]); //blue channel
-		imwrite("green.png", bgr[1]); //green channel
-		imwrite("red.png", bgr[2]); //red channel
+		images.push_back(image_cropped);
+		
+		Mat output;
+		inRange(image_cropped, Scalar(100, 100, 0), Scalar(255, 255, 200), output);
+		bitwise_not(output, output);
+		cvtColor(image_cropped, image_cropped, COLOR_BGR2GRAY);
+		bitwise_xor(image_cropped, output, output);
+		imwrite("output.png", output);
 		system("PAUSE");
-		images.push_back(image);
 	}
 	return images;
 }
