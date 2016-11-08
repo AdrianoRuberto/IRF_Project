@@ -25,7 +25,7 @@ using namespace std;
 #define NOISE_BAND_FRAC 20
 
 // threshold for selecting line in the horizontal and vertical directions
-#define LINE_THRESHOLD 50
+#define LINE_THRESHOLD 40
 
 // threshold for the size of found rectangles
 #define RECT_THRESHOLD 80
@@ -129,7 +129,7 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 	int im_rows = im_gray.rows;
 	int im_cols = im_gray.cols;
 
-	cout << "rotated of : " << rotation(im_gray, im_gray) << "deg | ";
+	cout << "rotated of : " << rotation(im_gray, im_gray) << " deg | ";
 	
 	// removing the the band on the top of scanned images
 	// replacing the noised zone by white pixels
@@ -150,6 +150,9 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 		}
 	}
 
+	int icon_cols = im_cols / ICONS_BAND_FRAC;
+	Mat subMat = im_gray(Range(0, im_rows - 1), Range(0, icon_cols - 1));
+	subMat = 255;
 	// Inverting the image this will be useful when detecting the lines of the 
 	// grid 
 	bitwise_not(im_gray, im_gray);
@@ -459,11 +462,12 @@ int main(void) {
 
 	clock_t end_time = clock();
 	clock_t tot_time = (end_time - start_time);
-	cout << "total execution time:      " << tot_time / 1000 << "s" << endl;
-	cout << "total execution time:      " << tot_time / 1000 / 60 << "min ";
+	cout << "Total execution time:      " << tot_time / 1000 << "s" << endl;
+	cout << "Total execution time:      " << tot_time / 1000 / 60 << "min ";
 	cout << ((tot_time / 1000) % 60) << "s" << endl;
-	cout << "processed images:          " << processed_images << endl;
-	cout << "successfully proc. img:    " << successful_images << endl;
+
+	cout << "Images proc. " << successful_images << " / " << processed_images
+		<< " (" << ((double)successful_images / processed_images) * 100 << "%)\n";
 	cout << "avg. proc. time per image: " << tot_time / processed_images << "ms" << endl;
 
 	system("PAUSE");
