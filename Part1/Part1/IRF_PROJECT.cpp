@@ -31,7 +31,7 @@ using namespace std;
 #define RECT_THRESHOLD 80
 
 // offset to apply to lines coordinates to avoid taking the borders
-#define COORD_OFFSET 5
+#define COORD_OFFSET 8
 
 // Divide the image by 2 according to the vertical direction
 #define BLACK_SBAR_FRAC_N 2 
@@ -111,6 +111,8 @@ double rotation(const Mat& im_gray, Mat& im_rotated)
 
 	//getting the rotation matrix with the image center as rotation axe
 	Mat rot_mat = getRotationMatrix2D(Point2f(im_cols / 2, im_rows / 2), rot_angle, 1);
+
+	im_bar_zone = 255;
 
 	//rotation of the image
 	warpAffine(im_gray, im_rotated, rot_mat, im_gray.size());
@@ -382,7 +384,7 @@ String classifyCroppedIcon(const Mat& im, const map<String, Mat>& icons) {
 void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<array<String, 2>, 7>& result) {
 	//TODO strategy for weird rectangle-quantities, general handling for page 22
 	if (rectangles.size() != 35) {
-		cout << "Skipping this image because of bad rectangle count!" << endl;
+		std::cout << "Skipping this image because of bad rectangle count!" << endl;
 		return;
 	}
 
@@ -436,6 +438,7 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 int main(void) {
 	clock_t start_time = clock();
 	const string PATH_IMGDB = "imgdb/";
+	vector<string> unusedImages;
 
 	int processed_images = 0;
 	int successful_images = 0;
@@ -459,6 +462,7 @@ int main(void) {
 				successful_images++;
 			}
 			else {
+				unusedImages.push_back(filename.str());
 				cout << "Warning: skipped image because of bad rectangle count" << endl;
 			}
 		}
@@ -473,6 +477,14 @@ int main(void) {
 	cout << "Images proc. " << successful_images << " / " << processed_images
 		<< " (" << ((double)successful_images / processed_images) * 100 << "%)\n";
 	cout << "avg. proc. time per image: " << tot_time / processed_images << "ms" << endl;
+
+	cout << "\nUnused images\n";
+	cout << "=============\n" << endl;
+	for (const string& s : unusedImages) {
+		if (s.substr(3, 3).find("22")) {
+			cout << s << endl;
+		}
+	}
 
 	system("PAUSE");
 	return 0;
