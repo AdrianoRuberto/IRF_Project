@@ -16,6 +16,7 @@
 #include <math.h>
 #include <iomanip>
 #include <array>
+#include <time.h>
 
 using namespace cv;
 using namespace std;
@@ -24,16 +25,26 @@ using namespace std;
 #define NOISE_BAND_FRAC 20
 
 // threshold for selecting line in the horizontal and vertical directions
-#define LINE_THRESHOLD 50
+#define LINE_THRESHOLD 40
 
 // threshold for the size of found rectangles
 #define RECT_THRESHOLD 80
 
 // offset to apply to lines coordinates to avoid taking the borders
-#define COORD_OFFSET 5
+#define COORD_OFFSET 8
 
-//TODO replace this with a proper function
-#define loadIcons icons[iconType] = loadImage(templatepath + iconType + ".png")
+// Divide the image by 2 according to the vertical direction
+#define BLACK_SBAR_FRAC_N 2 
+
+// We take the 1/5 of the image regarding rows
+#define BLACK_SBAR_FRAC_M 5
+
+// Upper band to be removed in the input images
+#define NOISE_BAND_FRAC 20
+
+// The icons are located in the 1/6 left of the image
+#define ICONS_BAND_FRAC 6 
+
 
 /*
 Loads the image.
@@ -51,6 +62,65 @@ Mat loadImage(const string &name) {
 }
 
 /*
+	Rotates the original image to make it straight. We look for the band up in
+	the image to look for the longest line we use the canny filter to detect
+	edges and hough transform to detect straight lines
+	@param im_gray		The original gray image
+	@param im_rotated	The result of the rotation
+	@return the degree of the rotation
+*/
+double rotation(const Mat& im_gray, Mat& im_rotated)
+{
+	int im_rows = im_gray.rows;
+	int im_cols = im_gray.cols;
+
+	// First we take the upper portion of the image where the black band is 
+	// located
+	int solid_bar_rows = im_rows / BLACK_SBAR_FRAC_M;
+	int solid_bar_cols = im_cols / BLACK_SBAR_FRAC_N;
+	int noise_zone_rows = im_rows / NOISE_BAND_FRAC;
+	int noise_zone_cols = im_cols / NOISE_BAND_FRAC;
+	// We take a reference on the zone containing the solid bar
+	Mat im_bar_zone = im_gray(Range(noise_zone_rows, solid_bar_rows), Range(solid_bar_cols, im_cols - noise_zone_cols));
+	Mat im_canny_edges;
+	Canny(im_bar_zone, im_canny_edges, 50, 200, 3);
+	vector<Vec4i> hough_lines;
+
+	// The HoughLineP is called with an angular resolution of 0.1 degree
+	HoughLinesP(im_canny_edges, hough_lines, 1, CV_PI / 1800, 50, 50, 10);
+	int best_line_pos; //position of the longest line in the line's vector
+	float max_norm = 0;
+	float line_norm;
+	for (int i = 0; i < hough_lines.size(); i++) {
+		Vec4i l = hough_lines[i];
+		line_norm = pow((l[2] - l[0]), 2) + pow((l[3] - l[1]), 2);
+		if (line_norm > max_norm) {
+			max_norm = line_norm;
+			best_line_pos = i;
+		}
+	}
+
+	// At the end of the loop we have the longest line
+	// Calculating the angle between the line and a virtual straight horizontal 
+	// line
+	Vec4i best_line = hough_lines[best_line_pos];
+	double rot_angle = atan((double)(best_line[3] - best_line[1]) / (double)(best_line[2] - best_line[0]));
+
+	// Conversion on the angle from rad to degree
+	rot_angle = rot_angle*(180 / CV_PI);
+
+	//getting the rotation matrix with the image center as rotation axe
+	Mat rot_mat = getRotationMatrix2D(Point2f(im_cols / 2, im_rows / 2), rot_angle, 1);
+
+	im_bar_zone = 255;
+
+	//rotation of the image
+	warpAffine(im_gray, im_rotated, rot_mat, im_gray.size());
+
+	return rot_angle;
+}
+
+/*
 	Gets the correct rectangles that can be found on the given matrice
 	@param im_rgb	The given image
 	@return A vector with all the founded rectangle
@@ -60,26 +130,31 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 	cvtColor(im_rgb, im_gray, COLOR_BGR2GRAY);
 	int im_rows = im_gray.rows;
 	int im_cols = im_gray.cols;
+
+	cout << "rotated of : " << rotation(im_gray, im_gray) << " deg | ";
+	
 	// removing the the band on the top of scanned images
+	// replacing the noised zone by white pixels
 	int im_noise_band = im_rows / NOISE_BAND_FRAC;
-	for(int i = 0; i < im_noise_band; i++)
-	{
-		for(int j = 0; j < im_cols; j++)
-		{
-			im_gray.at<uchar>(i, j) = (uchar)255; //replacing the noised zone by white pixels
-			im_gray.at<uchar>(im_rows - i - 1, j) = (uchar)255; //replacing the noised zone by white pixels
-		}
-	}
-	//removing the side bands
-	for(int j = 0; j < im_noise_band; j++)
-	{
-		for(int i = 0; i <im_rows; i++)
-		{
-			im_gray.at<uchar>(i, j) = (uchar)255; //replacing the noised zone by white pixels
-			im_gray.at<uchar>(i, im_cols - j - 1) = (uchar)255; //replacing the noised zone by white pixels
+	for (int i = 0; i < im_noise_band; i++) {
+		for (int j = 0; j < im_cols; j++) {
+			im_gray.at<uchar>(i, j) = (uchar)255; 
+			im_gray.at<uchar>(im_rows - i - 1, j) = (uchar)255;
 		}
 	}
 
+	//removing the side bands
+	//replacing the noised zone by white pixels
+	for (int j = 0; j < im_noise_band; j++) {
+		for (int i = 0; i < im_rows; i++) {
+			im_gray.at<uchar>(i, j) = (uchar)255; 
+			im_gray.at<uchar>(i, im_cols - j - 1) = (uchar)255; 
+		}
+	}
+
+	int icon_cols = im_cols / ICONS_BAND_FRAC;
+	Mat subMat = im_gray(Range(0, im_rows - 1), Range(0, icon_cols - 1));
+	subMat = 255;
 	// Inverting the image this will be useful when detecting the lines of the 
 	// grid 
 	bitwise_not(im_gray, im_gray);
@@ -216,7 +291,7 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	vector<Mat> images;
 	for (const Rect& r : rects) {
 		images.push_back(image.colRange(r.x, r.x + r.width)
-							  .rowRange(r.y, r.y + r.height));
+			.rowRange(r.y, r.y + r.height));
 	}
 	return images;
 }
@@ -226,7 +301,7 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	@param fileName			The name of the file
 	@param subThumbnails	The matrices to save
 */
-void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails, array<String, 7> iconLabels) {
+void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails, array<array<String, 2>, 7> iconLabels) {
 	const string SAVE_DIR = "results/";
 
 	string scripter = fileName.substr(0, 3);
@@ -235,17 +310,11 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails,
 
 	for (int i = 0; i < subThumbnails.size(); ++i) {
 		// Creating the string
-		string label;
-		if (i >= 35) {
-			label = "failure_in_complete_page";
-		}
-		else {
-			label = iconLabels[i / 5];
-		}
+		string label = iconLabels[i / 5][0];
 		string row = to_string(i / 5 + 1);
 		string col = to_string((i % 5) + 1);
 		string name = label + "_" + scripter + "_" + page + "_" + row + "_" + col;
-		
+
 		// Save the thumbnails
 		imwrite(SAVE_DIR + name + ".png", subThumbnails.at(i));
 
@@ -258,95 +327,64 @@ void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails,
 		file << "page " << page << "\n";
 		file << "row " << row << "\n";
 		file << "col " << col << "\n";
+		file << "size " + iconLabels[i / 5][1];
 		file.close();
 	}
 }
 
 
+const String TEMPLATE_PATH = "templates/";
+const map<String, Mat> ICONS = {
+	{ "accident", loadImage(TEMPLATE_PATH + "accident.png") },
+	{ "bomb", loadImage(TEMPLATE_PATH + "bomb.png")},
+	{ "car", loadImage(TEMPLATE_PATH + "car.png") },
+	{ "casualty", loadImage(TEMPLATE_PATH + "casualty.png") },
+	{ "electricity", loadImage(TEMPLATE_PATH + "electricity.png") },
+	{ "fire", loadImage(TEMPLATE_PATH + "fire.png") },
+	{ "fire_brigade", loadImage(TEMPLATE_PATH + "fire_brigade.png") },
+	{ "flood", loadImage(TEMPLATE_PATH + "flood.png") },
+	{ "gas", loadImage(TEMPLATE_PATH + "gas.png") },
+	{ "injury", loadImage(TEMPLATE_PATH + "injury.png") },
+	{ "paramedics", loadImage(TEMPLATE_PATH + "paramedics.png") },
+	{ "person", loadImage(TEMPLATE_PATH + "person.png") },
+	{ "police", loadImage(TEMPLATE_PATH + "police.png") },
+	{ "roadblock", loadImage(TEMPLATE_PATH + "roadblock.png") }
+};
+
+const map<String, Mat> ICONS_TEXT = {
+	{ "small", loadImage(TEMPLATE_PATH + "small.png")},
+	{ "medium", loadImage(TEMPLATE_PATH + "medium.png") },
+	{ "large", loadImage(TEMPLATE_PATH + "large.png") }
+};
+
 /*
-	Classifies a cropped icon and returns a descriptive string
+Classifies a cropped icon and returns a descriptive string
 */
-String classifyCroppedIcon(const Mat& icon) {
-
-	// build map with all icons, hacky, should probably be refactored
-	std::map <string, cv::Mat> icons;
-	cv::String templatepath = "templates/";
-	cv::String iconType;
-
-	iconType = "accident";
-	loadIcons;
-	iconType = "bomb";
-	loadIcons;
-	iconType = "car";
-	loadIcons;
-	iconType = "casualty";
-	loadIcons;
-	iconType = "electricity";
-	loadIcons;
-	iconType = "fire";
-	loadIcons;
-	iconType = "fire_brigade";
-	loadIcons;
-	iconType = "flood";
-	loadIcons;
-	iconType = "gas";
-	loadIcons;
-	iconType = "injury";
-	loadIcons;
-	iconType = "paramedics";
-	loadIcons;
-	iconType = "person";
-	loadIcons;
-	iconType = "police";
-	loadIcons;
-	iconType = "roadblock";
-	loadIcons;
-
-	// go through list of icons and find the best match
-	cv::Mat result;
-	std::map<std::string, cv::Mat>::iterator it, end, res;
-	double currentVal, maxVal;
-	maxVal = -1; 
-	end = icons.end();
-	res = end;
-
-	for (it = icons.begin(); it != end; it++) {
-		matchTemplate(icon, it->second, result, CV_TM_CCOEFF_NORMED);
+String classifyCroppedIcon(const Mat& im, const map<String, Mat>& icons) {
+	Mat result;
+	double currentVal;
+	double maxVal = -1;
+	String res = "";
+	for (auto i : icons) {
+		matchTemplate(im, i.second, result, CV_TM_CCOEFF_NORMED);
 		minMaxLoc(result, NULL, &currentVal);
-		
-		if (currentVal > maxVal) {
+
+		if (currentVal >= 0.5 && currentVal > maxVal) {
 			maxVal = currentVal;
-			res = it;
+			res = i.first;
 		}
 	}
-	
-	
-	//cout << "Probability of match: " << currentVal << endl;
 
-	if (maxVal < 0.5) {
-		cout << "error classifying, confidence to low" << endl;
-		return "not_classified";
-	}
-
-	//return String-descriptor of classified icon
-	//cout << "match: " << res->first << ", probability of match: " << currentVal << endl;
-	return res->first;
+	return res;
 }
 
 /*
 	Isolates all the left type images.
 */
-void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<String, 7>& result) {
-	result[0] = "failure";
-	result[1] = "failure";
-	result[2] = "failure";
-	result[3] = "failure";
-	result[4] = "failure";
-	result[5] = "failure";
-	result[6] = "failure";
+void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<array<String, 2>, 7>& result) {
 	//TODO strategy for weird rectangle-quantities, general handling for page 22
 	if (rectangles.size() != 35) {
-		cout << "Skipping this image because of bad rectangle count!" << endl;
+		std::cout << "Skipping this image because of bad rectangle count!" << endl;
 		return;
 	}
 
@@ -358,59 +396,95 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<S
 	for (const Rect& r : rectangles) {
 		int arithMeanY = 0;
 		int arithMeanH = 0;
-		meanAccumY += r.y;    
+		meanAccumY += r.y;
 		meanAccumH += r.height;
 		// cout << r.y << endl;
 		rectCount++;
 		if (rectCount % 5 == 0) {
 			arithMeanY = (meanAccumY / 5.0);
 			arithMeanH = (meanAccumH / 5.0);
-			
+
 			// Setup a rectangle to define your region of interest
 			// TODO fine-tuning the cropping (if not robust enough)
-			cv::Rect myROI((int)(image.cols*0.08), arithMeanY, (int)(image.cols*0.12), arithMeanH);
+			cv::Rect myROI(rectangles[rectCount-5].x - (int)(image.cols*0.15), arithMeanY, (int)(image.cols*0.08), arithMeanH);
+			//
 
 			// Crop the full image to that image contained by the rectangle myROI
 			// Note that this doesn't copy the data
 			cv::Mat croppedRef(image, myROI);
 
 			cv::Mat cropped;
+			//TODO is it faster to not copy?
 			// Copy the data into new matrix
 			croppedRef.copyTo(cropped);
-			//imwrite("dump.png", cropped);
-			//system("PAUSE");
-			
+
 			//reset accumulators
 			meanAccumY = 0;
 			meanAccumH = 0;
 
-			result[lineCount] = classifyCroppedIcon(cropped);
+			result[lineCount][0] = classifyCroppedIcon(cropped, ICONS);
+			result[lineCount][1] = classifyCroppedIcon(cropped, ICONS_TEXT);
+			if (result[lineCount][0].empty()) {
+				//inspect wrong recognition
+				imwrite("dump.png", cropped);
+				system("PAUSE");
+			}
 			lineCount++;
 		}
 	}
 }
 
+
 int main(void) {
+	clock_t start_time = clock();
 	const string PATH_IMGDB = "imgdb/";
-	
-	for (int i = 0; i < 30; ++i) {
+	vector<string> unusedImages;
+
+	int processed_images = 0;
+	int successful_images = 0;
+	//TODO further improvements through using multithreading
+	for (int i = 0; i < 3500; ++i) {
 		stringstream filename;
 		filename << setfill('0') << setw(5) << i << ".png";
 		Mat im_rgb = imread(PATH_IMGDB + filename.str());
 		if (im_rgb.data != NULL) {
+			processed_images++;
 			cout << filename.str() << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
-			array<String, 7> icons;
-			isolateAndClassifyIcons(im_rgb, res, icons);
-			//if (res.size() >= 5) {
-			if (res.size() >= 5) { // TODO what to do with the images with wrong rectangle counts
+
+			if (res.size() == 35) { // TODO what to do with the images with wrong rectangle counts
+				array<array<String, 2>, 7> icons;
+
+				isolateAndClassifyIcons(im_rgb, res, icons);
 				//TODO make sure that we have no remnants of the black line by blocking everything
 				// in the sub-images that is not blue
 				saveSubThumbnails(filename.str(), slice(im_rgb, res), icons);
+				successful_images++;
+			}
+			else {
+				unusedImages.push_back(filename.str());
+				cout << "Warning: skipped image because of bad rectangle count" << endl;
 			}
 		}
 	}
 
+	clock_t end_time = clock();
+	clock_t tot_time = (end_time - start_time);
+	cout << "Total execution time:      " << tot_time / 1000 << "s" << endl;
+	cout << "Total execution time:      " << tot_time / 1000 / 60 << "min ";
+	cout << ((tot_time / 1000) % 60) << "s" << endl;
+
+	cout << "Images proc. " << successful_images << " / " << processed_images
+		<< " (" << ((double)successful_images / processed_images) * 100 << "%)\n";
+	cout << "avg. proc. time per image: " << tot_time / processed_images << "ms" << endl;
+
+	cout << "\nUnused images\n";
+	cout << "=============\n" << endl;
+	for (const string& s : unusedImages) {
+		if (s.substr(3, 3).find("22")) {
+			cout << s << endl;
+		}
+	}
 
 	system("PAUSE");
 	return 0;
