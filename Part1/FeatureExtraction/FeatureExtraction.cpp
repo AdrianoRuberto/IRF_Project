@@ -12,10 +12,10 @@ using namespace std;
 vector<string> getFilesName(const char* path, const char* filter) {
 	vector<string> names;
 	DIR* rep = opendir(path);
-	struct dirent* fichierLu = readdir(rep);
-	while ((fichierLu = readdir(rep)) != NULL) {
-		if (strstr(fichierLu->d_name, filter) != NULL) {
-			names.push_back(fichierLu->d_name);
+	struct dirent* fileRead = readdir(rep);
+	while ((fileRead = readdir(rep)) != NULL) {
+		if (strstr(fileRead->d_name, filter) != NULL) {
+			names.push_back(fileRead->d_name);
 		}
 	}
 	
