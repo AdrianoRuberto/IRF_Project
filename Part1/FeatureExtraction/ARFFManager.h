@@ -14,12 +14,16 @@ struct Attribute {
 class ARFFManager
 {
 private:
+	string relation;
 	vector<Attribute> attributes;
+	vector<string> datas;
 public:
 
 	void write(ofstream& f);
 	void addAttribute(const Attribute& att);
-	ARFFManager();
+	void addDatas(const string& line);
+
+	ARFFManager(const string& s);
 	~ARFFManager();
 };
 
