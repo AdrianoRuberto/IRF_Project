@@ -4,10 +4,31 @@
 #include "stdafx.h"
 #include "ARFFManager.h"
 #include <string>
+#include "dirent.h"
+#include <iostream>
 using namespace std;
+
+
+vector<string> getFilesName(const char* path, const char* filter) {
+	vector<string> names;
+	DIR* rep = opendir(path);
+	struct dirent* fichierLu = readdir(rep);
+	while ((fichierLu = readdir(rep)) != NULL) {
+		if (strstr(fichierLu->d_name, filter) != NULL) {
+			names.push_back(fichierLu->d_name);
+		}
+	}
+	
+	return names;
+}
 
 int main()
 {
+	
+	for (string s : getFilesName("..//Part1//Results", ".png")) {
+		cout << s << endl;
+	}
+
 	ARFFManager manager("IRF_Project");
 	manager.addAttribute({ "LCC", "string" });
 	manager.addAttribute({ "sepallength", "NUMERIC" });
