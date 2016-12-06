@@ -71,8 +71,52 @@ string getNormalizeNameFromFile(const string& path) {
 	exit("Couldn't get any label");
 }
 
+Mat normalize(const Mat& mat) {
+	
+	Mat im_gray;
+	cvtColor(mat, im_gray, COLOR_BGR2GRAY);
+
+	Mat im_bw;
+	threshold(im_gray, im_bw, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+	Mat hist_v = Mat::zeros(im_bw.cols, 1, CV_32SC1);
+	Mat hist_h = Mat::zeros(im_bw.rows, 1, CV_32SC1);
+	for (int i = 0; i < im_bw.rows; i++) {
+		// pointer to acces image's row this is faster than at template function
+		uchar *im_row_ptr = im_gray.ptr<uchar>(i);
+
+		for (int j = 0; j < im_bw.cols; j++) {
+			hist_h.at<int>(i) += im_row_ptr[j];
+			hist_v.at<int>(j) += im_row_ptr[j];
+		}
+	}
+
+	//imshow("Gray", im_gray);
+	//imshow("Bw", im_bw);
+
+	int top = -1;
+	int bottom = -1;
+	for (int i = 0; i < im_bw.cols; ++i) {
+		if (hist_v.at<int>(i) > 20) {
+			bottom = i + 1;
+			if (top == -1) {
+				top = i - 1;
+			}
+		}
+	}
+
+	cout << "Top: " <<  top << " | " << "Bottom: " << bottom << endl;
+
+
+
+	return im_bw;
+}
+
 int main()
 {
+	Mat mat = loadImage(path + "accident_000_00_1_2.png");
+	normalize(mat);
+	/*	
 	map<string, vector<Mat>> files;
 	for (string fileName : getFilesName(path.c_str(), ".png")) {
 		string key = getNormalizeNameFromFile(path + fileName);
@@ -83,6 +127,8 @@ int main()
 		cout << "Adding : " << fileName << endl;
 		files.at(key).push_back(loadImage(path + fileName));
 	}
+
+
 
 
 	ARFFManager manager("IRF_Project");
@@ -102,7 +148,7 @@ int main()
 	ofstream f("test.arff");
 
 	manager.write(f);
-
+	*/
 	system("pause");
     return 0;
 }
