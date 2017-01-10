@@ -15,7 +15,7 @@ using namespace std;
 using namespace cv;
 
 string path = "..//Part1//Results/";
-vector<string> NAMES = { "accident", "bomb", "car", "casualty", "electricity", "fire", "fire brigade", "flood", "gas", "injury", "paramedics", "person", "police", "road block"};
+vector<string> NAMES = { "accident", "bomb", "car", "casualty", "electricity", "fire", "fire_brigade", "flood", "gas", "injury", "paramedics", "person", "police", "roadblock"};
 
 
 void exit(string exitMsg) {
@@ -112,11 +112,69 @@ Mat normalize(const Mat& mat) {
 	return im_bw;
 }
 
+/*
+Returns the number of circle
+This feature is Rotation variant.
+
+@param Mat The matrice
+@return The aspect/ratio
+*/
+int getNumberOfCircle(const Mat& mat) {
+	vector<Vec3f> circles;
+	HoughCircles(mat, circles, CV_HOUGH_GRADIENT, 1, mat.rows / 8, 150, 50, 0, 0);
+
+	return circles.size();
+}
+
+
+double area(const Mat& mat) {
+	
+
+}
+
+int getNumberOfSquare(const Mat& mat) {
+
+}
+
+/*
+Returns the aspect Ratio feature.
+This feature is Rotation variant.
+
+@param Mat The matrice
+@return The aspect/ratio
+*/
+double aspectRatio(const Mat& mat) {
+	// Rotation variant feature
+	return (double)(mat.cols + 1) / (double)(mat.rows + 1);
+}
+
+/*
+Returns the Hu Moments feature.
+This feature is RST invariant.
+
+@param Mat The matrice
+@return the Hu Moments feature.
+*/
+vector<double> huMomentFeature(const Mat& mat) {
+	double humoments[7];
+	HuMoments(moments(mat), humoments);
+
+	vector<double> res;
+	for (int i = 0; i < 7; ++i) {
+		res.push_back(humoments[i]);
+	}
+
+	return res;
+}
+
 int main()
 {
-	Mat mat = loadImage(path + "accident_000_00_1_2.png");
-	normalize(mat);
-	/*	
+
+	
+	// normalize(mat);
+
+	/*
+	
 	map<string, vector<Mat>> files;
 	for (string fileName : getFilesName(path.c_str(), ".png")) {
 		string key = getNormalizeNameFromFile(path + fileName);
@@ -127,13 +185,20 @@ int main()
 		cout << "Adding : " << fileName << endl;
 		files.at(key).push_back(loadImage(path + fileName));
 	}
+	*/
 
 
+	ofstream f("test.arff");
 
 
-	ARFFManager manager("IRF_Project");
-	manager.addAttribute({ "LCC", "string" });
-	manager.addAttribute({ "sepallength", "NUMERIC" });
+	ARFFManager manager("IRF_Project", f);
+	manager.addAttribute({ "M1", "NUMERIC" }, f);
+	manager.addAttribute({ "M2", "NUMERIC" }, f);
+	manager.addAttribute({ "M3", "NUMERIC" }, f);
+	manager.addAttribute({ "M4", "NUMERIC" }, f);
+	manager.addAttribute({ "M5", "NUMERIC" }, f);
+	manager.addAttribute({ "M6", "NUMERIC" }, f);
+	manager.addAttribute({ "M7", "NUMERIC" }, f);
 
 	stringstream ss;
 	ss << "{";
@@ -141,14 +206,26 @@ int main()
 		ss << NAMES.at(i) << (i < NAMES.size() - 1 ? "," : "}");
 	}
 
-	manager.addAttribute({ "class", ss.str() });
+	manager.addAttribute({ "class", ss.str() }, f);
+
+	for (string fileName : getFilesName(path.c_str(), ".png")) {
+		Mat mat = loadImage(path + fileName);
+
+		cvtColor(mat, mat, CV_BGR2GRAY);
+		stringstream humoments;
+		for (auto d : huMomentFeature(mat)) {
+			humoments << d << ",";
+		}
+
+		humoments << fileName.substr(0, fileName.find_first_of('_'));
+		
+		cout << "Adding : " << humoments.str() << endl;
+		manager.addDatas(humoments.str(), f);
+	}
 	
-	manager.addDatas("");
+	
 
-	ofstream f("test.arff");
-
-	manager.write(f);
-	*/
+	waitKey(1);
 	system("pause");
     return 0;
 }
