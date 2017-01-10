@@ -71,45 +71,88 @@ string getNormalizeNameFromFile(const string& path) {
 	exit("Couldn't get any label");
 }
 
+/*
+cuts away white space around image an returns a grayscale image
+
+@param mat  image matrix
+@return cropped and grayscaled image
+*/
 Mat normalize(const Mat& mat) {
 	
+	// Threshold the HSV image, keep only the blue/colourful pixels
+	Mat hsv;
+	Scalar hsv_l(20, 60, 60);
+	Scalar hsv_h(130, 255, 255);
+	cvtColor(mat, hsv, CV_BGR2HSV);
+	Mat bw;
+	inRange(hsv, hsv_l, hsv_h, bw);
+	
+	// convert to grayscale
 	Mat im_gray;
 	cvtColor(mat, im_gray, COLOR_BGR2GRAY);
 
+	// blur slightly and threshold
+	Mat im_blur;
+	blur(bw, im_blur, Size(10, 10));
 	Mat im_bw;
-	threshold(im_gray, im_bw, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+	Scalar average = mean(im_blur);
+	threshold(im_blur, im_bw, average.val[0], 255, THRESH_BINARY);
 
-	Mat hist_v = Mat::zeros(im_bw.cols, 1, CV_32SC1);
-	Mat hist_h = Mat::zeros(im_bw.rows, 1, CV_32SC1);
-	for (int i = 0; i < im_bw.rows; i++) {
-		// pointer to acces image's row this is faster than at template function
-		uchar *im_row_ptr = im_gray.ptr<uchar>(i);
+	// extract contours
+	Mat dilated;
+	morphologyEx(im_bw, dilated, MORPH_OPEN, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
+	vector<vector<Point> > contours;
+	findContours(dilated, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 
-		for (int j = 0; j < im_bw.cols; j++) {
-			hist_h.at<int>(i) += im_row_ptr[j];
-			hist_v.at<int>(j) += im_row_ptr[j];
+	// strip large contour areas
+	vector<vector<Point> > stripped_contours;
+	int image_size = im_bw.cols * im_bw.rows;
+	for (auto c : contours) {
+		if (contourArea(c) < image_size) {
+			stripped_contours.push_back(c);
 		}
 	}
+	
 
-	//imshow("Gray", im_gray);
-	//imshow("Bw", im_bw);
-
-	int top = -1;
-	int bottom = -1;
-	for (int i = 0; i < im_bw.cols; ++i) {
-		if (hist_v.at<int>(i) > 20) {
-			bottom = i + 1;
-			if (top == -1) {
-				top = i - 1;
+	// find best bounding box
+	int best_box[4] = { -1, -1, -1, -1 };
+	for (auto c : stripped_contours) {
+		Rect bound = boundingRect(c);
+		int x = bound.x;
+		int y = bound.y;
+		int x2 = bound.x + bound.width;
+		int y2 = bound.y + bound.height;
+		if (best_box[0] < 0) {
+			best_box[0] = x;
+			best_box[1] = y;
+			best_box[2] = x2;
+			best_box[3] = y2;
+		}
+		else {
+			if (bound.x < best_box[0]) {
+				best_box[0] = bound.x;
+			}
+			if (bound.y < best_box[1]) {
+				best_box[1] = bound.y;
+			}
+			if (x2 > best_box[2]) {
+				best_box[2] = x2;
+			}
+			if (y2 > best_box[3]) {
+				best_box[3] = y2;
 			}
 		}
 	}
 
-	cout << "Top: " <<  top << " | " << "Bottom: " << bottom << endl;
+	Rect myROI(best_box[0], best_box[1], best_box[2] - best_box[0] , best_box[3] - best_box[1]);
 
+	// Crop the full image to that image contained by the rectangle myROI
+	// Note that this doesn't copy the data
+	Mat croppedImage = im_gray(myROI);
 
-
-	return im_bw;
+	cout << "Top: " << best_box[1] << " | " << "Bottom: " << best_box[3] << endl;
+	
+	return croppedImage;
 }
 
 /*
@@ -167,11 +210,23 @@ vector<double> huMomentFeature(const Mat& mat) {
 	return res;
 }
 
+void test_normalize(String file) {
+	Mat mat = loadImage(path + file);
+	namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
+	imshow("Display window", normalize(mat));
+	waitKey(0);
+}
+
 int main()
 {
 
-	
-	// normalize(mat);
+	test_normalize("accident_000_00_1_2.png");
+	test_normalize("gas_008_03_7_3.png");
+	test_normalize("injury_017_13_4_3.png");
+	test_normalize("paramedics_032_14_2_4.png");
+	test_normalize("police_013_09_2_4.png");
+	test_normalize("bomb_018_07_7_4.png");
+
 
 	/*
 	
