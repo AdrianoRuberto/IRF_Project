@@ -263,7 +263,17 @@ int main()
 
 	manager.addAttribute({ "class", ss.str() }, f);
 
-	for (string fileName : getFilesName(path.c_str(), ".png")) {
+	vector<string> fileNames;
+
+	for (string s : getFilesName(path.c_str(), ".png")) {
+		fileNames.push_back(s);
+	}
+
+	while (fileNames.size() > 0) {
+		int nb = rand() % fileNames.size();
+
+		string fileName = fileNames.at(nb);
+
 		Mat mat = loadImage(path + fileName);
 
 		cvtColor(mat, mat, CV_BGR2GRAY);
@@ -272,13 +282,21 @@ int main()
 			humoments << d << ",";
 		}
 
-		humoments << fileName.substr(0, fileName.find_first_of('_'));
-		
-		cout << "Adding : " << humoments.str() << endl;
-		manager.addDatas(humoments.str(), f);
-	}
-	
-	
+		ifstream file(path.c_str() + fileName.substr(0, fileName.find_last_of(".")) + ".txt");
+		string s, label;
+		while (file >> s >> label)
+		{
+			const char* ptr = strstr(s.c_str(), "label");
+			if (ptr != NULL) {
+				humoments << label;
+				cout << "Adding : " << humoments.str() << endl;
+				manager.addDatas(humoments.str(), f);
+				fileNames.erase(fileNames.begin() + nb);
+				break;
+			}
+		}
+
+	}	
 
 	waitKey(1);
 	system("pause");
