@@ -149,10 +149,12 @@ Mat normalize(const Mat& mat) {
 	// Crop the full image to that image contained by the rectangle myROI
 	// Note that this doesn't copy the data
 	Mat croppedImage = im_gray(myROI);
+	Mat output;
+	croppedImage.copyTo(output);
 
 	cout << "Top: " << best_box[1] << " | " << "Bottom: " << best_box[3] << endl;
 	
-	return croppedImage;
+	return output;
 }
 
 /*
@@ -219,13 +221,14 @@ void test_normalize(String file) {
 
 int main()
 {
+	/*test_normalize("roadblock_026_21_7_3.png");
 
 	test_normalize("accident_000_00_1_2.png");
 	test_normalize("gas_008_03_7_3.png");
 	test_normalize("injury_017_13_4_3.png");
 	test_normalize("paramedics_032_14_2_4.png");
 	test_normalize("police_013_09_2_4.png");
-	test_normalize("bomb_018_07_7_4.png");
+	test_normalize("bomb_018_07_7_4.png");*/
 
 
 	/*
