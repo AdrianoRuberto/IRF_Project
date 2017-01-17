@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "ARFFManager.h"
+#include "Features.h"
 #include "dirent.h"
 #include <string>
 #include <iostream>
@@ -157,81 +158,6 @@ Mat normalize(const Mat& mat) {
 	return output;
 }
 
-/*
-Returns the number of circle
-This feature is Rotation variant.
-
-@param Mat The matrice
-@return The aspect/ratio
-*/
-int getNumberOfCircle(const Mat& mat) {
-	vector<Vec3f> circles;
-	HoughCircles(mat, circles, CV_HOUGH_GRADIENT, 1, mat.rows / 8, 150, 50, 0, 0);
-
-	return circles.size();
-}
-
-
-double nbBlackPixel(const Mat& mat) {
-
-	int count = 0;
-
-	Mat bin;
-
-	threshold(mat, bin, 128, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-
-	for (int i = 0; i < bin.rows; ++i) {
-		for (int j = 0; j < bin.cols; ++j) {
-			if (bin.at<uchar>(i, j) == 0) {
-				count++;
-			}
-		}
-	}
-
-	return count;
-}
-
-
-double area(const Mat& mat) {
-	
-
-}
-
-int getNumberOfSquare(const Mat& mat) {
-
-}
-
-/*
-Returns the aspect Ratio feature.
-This feature is Rotation variant.
-
-@param Mat The matrice
-@return The aspect/ratio
-*/
-double aspectRatio(const Mat& mat) {
-	// Rotation variant feature
-	return (double)(mat.cols + 1) / (double)(mat.rows + 1);
-}
-
-/*
-Returns the Hu Moments feature.
-This feature is RST invariant.
-
-@param Mat The matrice
-@return the Hu Moments feature.
-*/
-vector<double> huMomentFeature(const Mat& mat) {
-	double humoments[7];
-	HuMoments(moments(mat), humoments);
-
-	vector<double> res;
-	for (int i = 0; i < 7; ++i) {
-		res.push_back(humoments[i]);
-	}
-
-	return res;
-}
-
 void test_normalize(String file) {
 	Mat mat = loadImage(path + file);
 	namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
@@ -290,8 +216,9 @@ string process(const string& fileName, ARFFManager& manager) {
 	}
 	*/
 
+
 	manager.addAttribute({ "RatioPixel", "NUMERIC" });
-	data << (double)nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
+	data << (double)Features::nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
 
 	data << getLabelName(fileName);
 	return data.str();
