@@ -172,6 +172,26 @@ int getNumberOfCircle(const Mat& mat) {
 }
 
 
+double nbBlackPixel(const Mat& mat) {
+
+	int count = 0;
+
+	Mat bin;
+
+	threshold(mat, bin, 128, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+	for (int i = 0; i < bin.rows; ++i) {
+		for (int j = 0; j < bin.cols; ++j) {
+			if (bin.at<uchar>(i, j) == 0) {
+				count++;
+			}
+		}
+	}
+
+	return count;
+}
+
+
 double area(const Mat& mat) {
 	
 
@@ -219,52 +239,77 @@ void test_normalize(String file) {
 	waitKey(0);
 }
 
-int main()
-{
-	/*test_normalize("roadblock_026_21_7_3.png");
-
-	test_normalize("accident_000_00_1_2.png");
-	test_normalize("gas_008_03_7_3.png");
-	test_normalize("injury_017_13_4_3.png");
-	test_normalize("paramedics_032_14_2_4.png");
-	test_normalize("police_013_09_2_4.png");
-	test_normalize("bomb_018_07_7_4.png");*/
-
-
-	/*
-	
-	map<string, vector<Mat>> files;
-	for (string fileName : getFilesName(path.c_str(), ".png")) {
-		string key = getNormalizeNameFromFile(path + fileName);
-		if (files.find(key) == files.end()) {
-			cout << "Creating new key for " << key << endl;
-			files.insert(files.begin(), pair<string, vector<Mat>>(key, vector<Mat>()));
-		}
-		cout << "Adding : " << fileName << endl;
-		files.at(key).push_back(loadImage(path + fileName));
-	}
-	*/
-
-
-	ofstream f("test.arff");
-
-
-	ARFFManager manager("IRF_Project", f);
-	manager.addAttribute({ "M1", "NUMERIC" }, f);
-	manager.addAttribute({ "M2", "NUMERIC" }, f);
-	manager.addAttribute({ "M3", "NUMERIC" }, f);
-	manager.addAttribute({ "M4", "NUMERIC" }, f);
-	manager.addAttribute({ "M5", "NUMERIC" }, f);
-	manager.addAttribute({ "M6", "NUMERIC" }, f);
-	manager.addAttribute({ "M7", "NUMERIC" }, f);
-
+string getClassName() {
 	stringstream ss;
 	ss << "{";
 	for (int i = 0; i < NAMES.size(); ++i) {
 		ss << NAMES.at(i) << (i < NAMES.size() - 1 ? "," : "}");
 	}
+	return ss.str();
+}
 
-	manager.addAttribute({ "class", ss.str() }, f);
+string getLabelName(const string& fileName) {
+	ifstream file(path.c_str() + fileName.substr(0, fileName.find_last_of(".")) + ".txt");
+	string s, label;
+	while (file >> s >> label)
+	{
+		const char* ptr = strstr(s.c_str(), "label");
+		if (ptr != NULL) {
+			if (std::find(NAMES.begin(), NAMES.end(), label) != NAMES.end()) {
+				return label;
+			}
+			else {
+				exit(fileName + " doesn't have a right label : " + label);
+			}
+		}
+	}
+}
+
+string process(const string& fileName) {
+
+	Mat mat = loadImage(path + fileName);
+
+	cvtColor(mat, mat, CV_BGR2GRAY);
+
+	stringstream data;
+
+	// Features
+
+	/*
+	for (auto hu : huMomentFeature(mat)) {
+	data << hu << ",";
+	}
+	*/
+
+
+
+	//humoments << aspectRatio(mat) << ",";
+
+	data << (double)nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
+
+	data << getLabelName(fileName);
+	return data.str();
+	
+}
+
+int main()
+{
+	ofstream f("test.arff");
+	ARFFManager manager("IRF_Project", f);
+	
+	// ATTRIBUTES ZONE
+
+	/*
+	for (int i = 1; i <= 7; ++i) {
+		manager.addAttribute({ "M" + to_string(i) , "NUMERIC" }, f);
+	}
+	*/
+	
+	manager.addAttribute({ "RatioPixel", "NUMERIC" }, f);
+
+
+	// LAST ATTRIBUTE SHOULD BE THE CLASS
+	manager.addAttribute({ "class", getClassName() }, f);
 
 	vector<string> fileNames;
 
@@ -272,35 +317,21 @@ int main()
 		fileNames.push_back(s);
 	}
 
+	cout << "Processing all files (" << fileNames.size() << ")" << endl << "..." << endl;
+
 	while (fileNames.size() > 0) {
 		int nb = rand() % fileNames.size();
 
 		string fileName = fileNames.at(nb);
 
-		Mat mat = loadImage(path + fileName);
+		manager.addDatas(process(fileName), f);
 
-		cvtColor(mat, mat, CV_BGR2GRAY);
-		stringstream humoments;
-		for (auto d : huMomentFeature(mat)) {
-			humoments << d << ",";
-		}
-
-		ifstream file(path.c_str() + fileName.substr(0, fileName.find_last_of(".")) + ".txt");
-		string s, label;
-		while (file >> s >> label)
-		{
-			const char* ptr = strstr(s.c_str(), "label");
-			if (ptr != NULL) {
-				humoments << label;
-				cout << "Adding : " << humoments.str() << endl;
-				manager.addDatas(humoments.str(), f);
-				fileNames.erase(fileNames.begin() + nb);
-				break;
-			}
-		}
-
+		fileNames.erase(fileNames.begin() + nb);
 	}	
 
+	cout << "Successfuly process all files" << endl;
+
+	f.close();
 	waitKey(1);
 	system("pause");
     return 0;
