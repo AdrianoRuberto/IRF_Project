@@ -199,6 +199,8 @@ vector<Mat> getZoningMatrices(const Mat& mat, int nbCol, int nbRow) {
 
 	vector<Mat> matrices;
 
+	matrices.push_back(mat);
+
 	int colStep = mat.cols / nbCol;
 	int rowStep = mat.rows / nbRow;
 
@@ -233,16 +235,14 @@ string process(const string& fileName, ARFFManager& manager) {
 
 		// ADD FEATURES HERE
 
-		/*
-		for (int i = 1; i <= 7; ++i) {
-		manager.addAttribute({ "M_" + to_string(i) , "NUMERIC" });
+		
+		for (int j = 1; j <= 7; ++j) {
+			manager.addAttribute({ "M_" + to_string(i) + to_string(j) , "NUMERIC" });
 		}
-		*/
-		/*
-		for (auto hu : huMomentFeature(mat)) {
-		data << hu << ",";
+
+		for (auto hu : Features::huMomentFeature(mat)) {
+			data << hu << ",";
 		}
-		*/
 
 		manager.addAttribute({ "RatioPixel_" + to_string(i), "NUMERIC" });
 		data << (double)Features::nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
@@ -289,7 +289,7 @@ int main()
 	cout << "File " << arffName << " finished to be written" << endl;
 
 	f.close();
-	waitKey(0);
+	system("pause");
     return 0;
 }
 
