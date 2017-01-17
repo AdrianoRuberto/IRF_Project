@@ -191,6 +191,27 @@ string getLabelName(const string& fileName) {
 	}
 }
 
+
+vector<Mat> getZoningMatrices(const Mat& mat, int nbCol, int nbRow) {
+	if (nbCol <= 0 || nbRow <= 0) {
+		throw out_of_range("NbCol or nbLine is out of range");
+	}
+
+	vector<Mat> matrices;
+
+	int colStep = mat.cols / nbCol;
+	int rowStep = mat.rows / nbRow;
+
+	for (int col = 0; col + colStep <= mat.cols; col += colStep) {
+		for (int row = 0; row + rowStep <= mat.rows; row += rowStep) {
+			Mat m = mat(Range(row, row + rowStep), Range(col, col + colStep));
+			matrices.push_back(m);
+		}
+	}
+
+	return matrices;
+}
+
 /*
 Process the given fileName with different features.
 
@@ -204,21 +225,30 @@ string process(const string& fileName, ARFFManager& manager) {
 	cvtColor(mat, mat, CV_BGR2GRAY);
 
 	stringstream data;
+	
+	vector<Mat> zones = getZoningMatrices(mat, 2, 3);
 
-	/*
-	for (int i = 1; i <= 7; ++i) {
-	manager.addAttribute({ "M" + to_string(i) , "NUMERIC" });
+	for (int i = 0; i < zones.size(); ++i) {
+		mat = zones.at(i);
+
+		// ADD FEATURES HERE
+
+		/*
+		for (int i = 1; i <= 7; ++i) {
+		manager.addAttribute({ "M_" + to_string(i) , "NUMERIC" });
+		}
+		*/
+		/*
+		for (auto hu : huMomentFeature(mat)) {
+		data << hu << ",";
+		}
+		*/
+
+		manager.addAttribute({ "RatioPixel_" + to_string(i), "NUMERIC" });
+		data << (double)Features::nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
 	}
-	*/
-	/*
-	for (auto hu : huMomentFeature(mat)) {
-	data << hu << ",";
-	}
-	*/
 
 
-	manager.addAttribute({ "RatioPixel", "NUMERIC" });
-	data << (double)Features::nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
 
 	data << getLabelName(fileName);
 	return data.str();
