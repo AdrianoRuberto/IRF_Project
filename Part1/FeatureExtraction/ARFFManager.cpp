@@ -1,30 +1,35 @@
 #include "stdafx.h"
 #include "ARFFManager.h"
 
-ofstream& ARFFManager::addAttribute(const Attribute & att, ofstream& f)
+void ARFFManager::addAttribute(const Attribute & att)
 {
-	attributes.push_back(att);
-	f << "@ATTRIBUTE " << att.name << " " << att.type << endl;
-	return f;
+	if (find(attributes.begin(), attributes.end(), att) == attributes.end()) {
+		attributes.push_back(att);
+	}
 }
 
-ofstream& ARFFManager::addDatas(const string & line, ofstream& f)
+void ARFFManager::addDatas(const string & line)
 {
-	static bool first = true;
+	datas.push_back(line);
+}
 
-	if (first) {
-		f << "@DATA" << endl;
-		first = false;
+void ARFFManager::write(ofstream & f)
+{
+	f << "@RELATION " << relation << endl;
+
+	for (Attribute att : attributes) {
+		f << "@ATTRIBUTE " << att.name << " " << att.type << endl;
 	}
 
-	datas.push_back(line);
-	f << line << endl;
-	return f;
+	f << "@DATA" << endl;
+	for (string data : datas) {
+		f << data << endl;
+	}
 }
 
-ARFFManager::ARFFManager(const string& s, ostream& f)
+ARFFManager::ARFFManager(const string& s)
 {
-	f << "@RELATION " << s << endl;
+	relation = s;
 
 }
 

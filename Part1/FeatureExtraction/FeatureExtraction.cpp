@@ -265,7 +265,13 @@ string getLabelName(const string& fileName) {
 	}
 }
 
-string process(const string& fileName) {
+/*
+Process the given fileName with different features.
+
+@param fileName The fileName
+@param manager	The ARFF manager
+*/
+string process(const string& fileName, ARFFManager& manager) {
 
 	Mat mat = loadImage(path + fileName);
 
@@ -273,43 +279,29 @@ string process(const string& fileName) {
 
 	stringstream data;
 
-	// Features
-
+	/*
+	for (int i = 1; i <= 7; ++i) {
+	manager.addAttribute({ "M" + to_string(i) , "NUMERIC" });
+	}
+	*/
 	/*
 	for (auto hu : huMomentFeature(mat)) {
 	data << hu << ",";
 	}
 	*/
 
-
-
-	//humoments << aspectRatio(mat) << ",";
-
+	manager.addAttribute({ "RatioPixel", "NUMERIC" });
 	data << (double)nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
 
 	data << getLabelName(fileName);
 	return data.str();
-	
 }
 
 int main()
 {
-	ofstream f("test.arff");
-	ARFFManager manager("IRF_Project", f);
-	
-	// ATTRIBUTES ZONE
-
-	/*
-	for (int i = 1; i <= 7; ++i) {
-		manager.addAttribute({ "M" + to_string(i) , "NUMERIC" }, f);
-	}
-	*/
-	
-	manager.addAttribute({ "RatioPixel", "NUMERIC" }, f);
-
-
-	// LAST ATTRIBUTE SHOULD BE THE CLASS
-	manager.addAttribute({ "class", getClassName() }, f);
+	string arffName = "test.arff";
+	ofstream f(arffName);
+	ARFFManager manager("IRF_Project");
 
 	vector<string> fileNames;
 
@@ -324,16 +316,23 @@ int main()
 
 		string fileName = fileNames.at(nb);
 
-		manager.addDatas(process(fileName), f);
+		manager.addDatas(process(fileName, manager));
 
 		fileNames.erase(fileNames.begin() + nb);
 	}	
 
 	cout << "Successfuly process all files" << endl;
 
+
+	manager.addAttribute({ "class", getClassName() });
+	cout << "Writting file" << endl;
+	cout << "..." << endl;
+	manager.write(f);
+
+	cout << "File " << arffName << " finished to be written" << endl;
+
 	f.close();
-	waitKey(1);
-	system("pause");
+	waitKey(0);
     return 0;
 }
 

@@ -8,3 +8,4 @@ Part1.VC.db
 *.txt
 */results/
 */imgdb/
+ipch/
