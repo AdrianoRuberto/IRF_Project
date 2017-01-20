@@ -88,6 +88,48 @@ public:
 		return res;
 	}
 
+	/*
+	Returns the center of mass in relative position (in an interval
+	between 0 and 1).
+	
+	@param mat the matrix
+	@return center of mass
+	*/
+	static vector<double> RelCenterOfMass(const Mat& mat) {
+		vector<double> ret;
+
+		int count = 0;
+
+		Mat bin;
+
+		threshold(mat, bin, 128, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+		int x = 0;
+		int y = 0;
+
+		for (int i = 0; i<bin.rows; ++i) {
+			for (int j = 0; j<bin.cols; ++j) {
+				if (bin.at<uchar>(i,j) == 0) {
+					count++;
+					x += j;
+					y += i;
+				}
+			}
+		}
+
+		if (count == 0) {
+			ret.push_back(0);
+			ret.push_back(0);
+		}
+		else {
+			ret.push_back(x / bin.rows);
+			ret.push_back(y / bin.cols);
+		}
+
+		return ret;
+	
+	}
+
 
 
 	Features();
