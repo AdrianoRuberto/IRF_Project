@@ -227,6 +227,12 @@ string process(const string& fileName, ARFFManager& manager) {
 	cvtColor(mat, mat, CV_BGR2GRAY);
 
 	stringstream data;
+
+	vector<double> com = Features::RelCenterOfMass(mat);
+	manager.addAttribute({ "RelCenterOfMassX", "NUMERIC" });
+	data << (double)com[0] << ",";
+	manager.addAttribute({ "RelCenterOfMassY", "NUMERIC" });
+	data << (double)com[1] << ",";
 	
 	vector<Mat> zones = getZoningMatrices(mat, 2, 3);
 
@@ -246,6 +252,12 @@ string process(const string& fileName, ARFFManager& manager) {
 
 		manager.addAttribute({ "RatioPixel_" + to_string(i), "NUMERIC" });
 		data << (double)Features::nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
+
+		vector<double> com = Features::RelCenterOfMass(mat);
+		manager.addAttribute({ "RelCenterOfMassX_" + to_string(i), "NUMERIC" });
+		data << (double)com[0] << ",";
+		manager.addAttribute({ "RelCenterOfMassY_" + to_string(i), "NUMERIC" });
+		data << (double)com[1] << ",";
 	}
 
 
