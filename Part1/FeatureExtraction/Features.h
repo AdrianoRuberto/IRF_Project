@@ -122,8 +122,8 @@ public:
 			ret.push_back(0);
 		}
 		else {
-			ret.push_back(x / bin.rows);
-			ret.push_back(y / bin.cols);
+			ret.push_back(((1.0 * x) / count) / bin.cols);
+			ret.push_back(((1.0 * y) / count) / bin.rows);
 		}
 
 		return ret;
