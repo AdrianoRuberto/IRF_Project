@@ -227,21 +227,25 @@ string process(const string& fileName, ARFFManager& manager) {
 	cvtColor(mat, mat, CV_BGR2GRAY);
 
 	stringstream data;
-
-	vector<double> com = Features::RelCenterOfMass(mat);
-	manager.addAttribute({ "RelCenterOfMassX", "NUMERIC" });
-	data << (double)com[0] << ",";
-	manager.addAttribute({ "RelCenterOfMassY", "NUMERIC" });
-	data << (double)com[1] << ",";
 	
-	vector<Mat> zones = getZoningMatrices(mat, 2, 3);
+	vector<Mat> zones = getZoningMatrices(mat, 2, 2);
+
+
+
+
+
+	manager.addAttribute({ "AspectRatio", "NUMERIC" });
+	data << Features::aspectRatio(mat) << ",";
+
+	//manager.addAttribute({ "HullLength/Area", "NUMERIC" });
+	//vector<double> hla = Features::ConvexHull(mat);
+	//data << hla[0] / hla[1] << ",";
 
 	for (int i = 0; i < zones.size(); ++i) {
 		mat = zones.at(i);
 
 		// ADD FEATURES HERE
-
-		
+		/*
 		for (int j = 1; j <= 7; ++j) {
 			manager.addAttribute({ "M_" + to_string(i) + to_string(j) , "NUMERIC" });
 		}
@@ -249,15 +253,17 @@ string process(const string& fileName, ARFFManager& manager) {
 		for (auto hu : Features::huMomentFeature(mat)) {
 			data << hu << ",";
 		}
-
-		manager.addAttribute({ "RatioPixel_" + to_string(i), "NUMERIC" });
-		data << (double)Features::nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
-
+		*/
 		vector<double> com = Features::RelCenterOfMass(mat);
 		manager.addAttribute({ "RelCenterOfMassX_" + to_string(i), "NUMERIC" });
 		data << (double)com[0] << ",";
 		manager.addAttribute({ "RelCenterOfMassY_" + to_string(i), "NUMERIC" });
 		data << (double)com[1] << ",";
+		
+
+		manager.addAttribute({ "RatioPixel_" + to_string(i), "NUMERIC" });
+		data << (double)Features::nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
+
 	}
 
 
