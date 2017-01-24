@@ -11,6 +11,7 @@
 #include "histogram.h"
 #include "cv.h"
 #include "highgui.h"
+#include "dirent.h"
 #include <iostream>
 #include <fstream>
 #include <math.h>
@@ -28,7 +29,7 @@ using namespace std;
 #define LINE_THRESHOLD 40
 
 // threshold for the size of found rectangles
-#define RECT_THRESHOLD 80
+#define RECT_THRESHOLD 68
 
 // offset to apply to lines coordinates to avoid taking the borders
 #define COORD_OFFSET 8
@@ -59,6 +60,20 @@ Mat loadImage(const string &name) {
 		exit(0);
 	}
 	return im;
+}
+
+
+vector<string> getFilesName(const char* path, const char* filter) {
+	vector<string> names;
+	DIR* rep = opendir(path);
+	struct dirent* fileRead = readdir(rep);
+	while ((fileRead = readdir(rep)) != NULL) {
+		if (strstr(fileRead->d_name, filter) != NULL) {
+			names.push_back(fileRead->d_name);
+		}
+	}
+
+	return names;
 }
 
 /*
@@ -131,7 +146,7 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 	int im_rows = im_gray.rows;
 	int im_cols = im_gray.cols;
 
-	cout << "rotated of : " << rotation(im_gray, im_gray) << " deg | ";
+	std::cout << "rotated of : " << rotation(im_gray, im_gray) << " deg | ";
 	
 	// removing the the band on the top of scanned images
 	// replacing the noised zone by white pixels
@@ -276,7 +291,7 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 		}
 	}
 
-	cout << correctRectangles.size() << " rectangles found !" << endl;
+	std::cout << correctRectangles.size() << " rectangles found !" << endl;
 
 	return correctRectangles;
 }
@@ -302,7 +317,7 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	@param subThumbnails	The matrices to save
 */
 void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails, array<array<String, 2>, 7> iconLabels) {
-	const string SAVE_DIR = "results/";
+	const string SAVE_DIR = "toast/";
 
 	string scripter = fileName.substr(0, 3);
 	string page = fileName.substr(3, 2);
@@ -427,7 +442,6 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 			if (result[lineCount][0].empty()) {
 				//inspect wrong recognition
 				imwrite("dump.png", cropped);
-				system("PAUSE");
 			}
 			lineCount++;
 		}
@@ -437,19 +451,41 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 
 int main(void) {
 	clock_t start_time = clock();
-	const string PATH_IMGDB = "imgdb/";
+	const string PATH_IMGDB = "donnees/";
 	vector<string> unusedImages;
 
 	int processed_images = 0;
 	int successful_images = 0;
 	//TODO further improvements through using multithreading
-	for (int i = 0; i < 3500; ++i) {
-		stringstream filename;
-		filename << setfill('0') << setw(5) << i << ".png";
-		Mat im_rgb = imread(PATH_IMGDB + filename.str());
+
+	for (string filename : getFilesName(PATH_IMGDB.c_str(), ".png")) {
+		Mat im_rgb = imread(PATH_IMGDB + filename);
 		if (im_rgb.data != NULL) {
+
+			Mat hsv;
+			Scalar hsv_l(20, 60, 60);
+			Scalar hsv_h(130, 255, 255);
+			cvtColor(im_rgb, hsv, CV_BGR2HSV);
+			Mat bw;
+			inRange(hsv, hsv_l, hsv_h, bw);
+
+			bitwise_not(bw, bw);
+			Mat test;
+
+			Mat im_bw;
+			cvtColor(im_rgb, im_bw, CV_BGR2GRAY);
+		    
+			bitwise_and(im_bw, bw, test);
+			imwrite(filename + filename, test);
+			bitwise_not(test, test, bw);
+
+			imwrite(filename, test);
+
+
+
+
 			processed_images++;
-			cout << filename.str() << " | ";
+			std::cout << filename << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
 
 			if (res.size() == 35) { // TODO what to do with the images with wrong rectangle counts
@@ -458,31 +494,31 @@ int main(void) {
 				isolateAndClassifyIcons(im_rgb, res, icons);
 				//TODO make sure that we have no remnants of the black line by blocking everything
 				// in the sub-images that is not blue
-				saveSubThumbnails(filename.str(), slice(im_rgb, res), icons);
+				saveSubThumbnails(filename, slice(im_rgb, res), icons);
 				successful_images++;
 			}
 			else {
-				unusedImages.push_back(filename.str());
-				cout << "Warning: skipped image because of bad rectangle count" << endl;
+				unusedImages.push_back(filename);
+				std::cout << "Warning: skipped image because of bad rectangle count" << endl;
 			}
 		}
 	}
 
 	clock_t end_time = clock();
 	clock_t tot_time = (end_time - start_time);
-	cout << "Total execution time:      " << tot_time / 1000 << "s" << endl;
-	cout << "Total execution time:      " << tot_time / 1000 / 60 << "min ";
-	cout << ((tot_time / 1000) % 60) << "s" << endl;
+	std::cout << "Total execution time:      " << tot_time / 1000 << "s" << endl;
+	std::cout << "Total execution time:      " << tot_time / 1000 / 60 << "min ";
+	std::cout << ((tot_time / 1000) % 60) << "s" << endl;
 
-	cout << "Images proc. " << successful_images << " / " << processed_images
+	std::cout << "Images proc. " << successful_images << " / " << processed_images
 		<< " (" << ((double)successful_images / processed_images) * 100 << "%)\n";
-	cout << "avg. proc. time per image: " << tot_time / processed_images << "ms" << endl;
+	std::cout << "avg. proc. time per image: " << tot_time / processed_images << "ms" << endl;
 
-	cout << "\nUnused images\n";
-	cout << "=============\n" << endl;
+	std::cout << "\nUnused images\n";
+	std::cout << "=============\n" << endl;
 	for (const string& s : unusedImages) {
 		if (s.substr(3, 3).find("22")) {
-			cout << s << endl;
+			std::cout << s << endl;
 		}
 	}
 
