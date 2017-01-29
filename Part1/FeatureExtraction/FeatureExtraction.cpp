@@ -241,6 +241,16 @@ string process(const string& fileName, ARFFManager& manager) {
 	vector<double> hla = Features::ConvexHull(mat);
 	data << hla[0] / hla[1] << ",";
 
+	/*
+	for (int j = 1; j <= 24; ++j) {
+		manager.addAttribute({ "Moment_" + to_string(j) , "NUMERIC" });
+	}
+
+	for (auto m : Features::MomentFeature(mat)) {
+		data << m << ",";
+	}
+	*/
+
 	for (int i = 0; i < zones.size(); ++i) {
 		mat = zones.at(i);
 

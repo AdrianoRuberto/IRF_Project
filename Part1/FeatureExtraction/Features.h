@@ -89,6 +89,49 @@ public:
 	}
 
 	/*
+	Returns the moments feature.
+	This feature is RST variant!
+	
+	@param mat Image matrix
+	@return Moments vector containing 24 features
+	*/
+	static vector<double> MomentFeature(const Mat& mat) {
+		std::vector<double> res;
+
+		cv::Moments moments = cv::moments(mat);
+
+		// spatial moments
+		res.push_back(moments.m00);
+		res.push_back(moments.m10);
+		res.push_back(moments.m01);
+		res.push_back(moments.m20);
+		res.push_back(moments.m11);
+		res.push_back(moments.m02);
+		res.push_back(moments.m30);
+		res.push_back(moments.m21);
+		res.push_back(moments.m12);
+		res.push_back(moments.m03);
+		// central moments
+		res.push_back(moments.mu20);
+		res.push_back(moments.mu11);
+		res.push_back(moments.mu02);
+		res.push_back(moments.mu03);
+		res.push_back(moments.mu21);
+		res.push_back(moments.mu12);
+		res.push_back(moments.mu03);
+		// central normalized moments
+		res.push_back(moments.nu20);
+		res.push_back(moments.nu11);
+		res.push_back(moments.nu02);
+		res.push_back(moments.nu30);
+		res.push_back(moments.nu21);
+		res.push_back(moments.nu12);
+		res.push_back(moments.nu03);
+		
+		return res;
+	}
+
+	/*
 	Returns the center of mass in relative position (in an interval
 	between 0 and 1).
 	
