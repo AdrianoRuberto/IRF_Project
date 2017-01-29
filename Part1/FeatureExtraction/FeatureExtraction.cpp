@@ -251,6 +251,10 @@ string process(const string& fileName, ARFFManager& manager) {
 	}
 	*/
 
+	//manager.addAttribute({ "ConnectedComponents", "NUMERIC" });
+	//data << Features::ConnectedComponentsFeature(mat) << ",";
+	
+
 	for (int i = 0; i < zones.size(); ++i) {
 		mat = zones.at(i);
 

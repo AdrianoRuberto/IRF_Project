@@ -1,5 +1,6 @@
 
 #include <cv.h>
+#include <highgui.h>
 
 using namespace std;
 using namespace cv;
@@ -197,7 +198,7 @@ public:
 		findContours(threshold_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 		/// Find the convex hull object for each contour
-		vector<vector<Point> >hull(contours.size());
+		vector<vector<Point> > hull(contours.size());
 		for (int i = 0; i < contours.size(); i++)
 		{
 			convexHull(Mat(contours[i]), hull[i], false);
@@ -222,6 +223,38 @@ public:
 		ret.push_back(areaOfHull);
 
 		return ret;
+	}
+
+	/*
+	Returns connected components in image
+	Does not work right :-(
+	
+	@param mat image matrix
+	@return number of connected components
+	*/
+	static int ConnectedComponentsFeature(const Mat& mat) {
+		
+		// blur slightly and threshold
+		Mat im_blur;
+		blur(mat, im_blur, Size(20, 20));
+		Mat im_bw;
+		Scalar average = mean(im_blur);
+		threshold(mat, im_bw, average.val[0], 255, THRESH_BINARY);
+
+		// extract contours
+		Mat dilated;
+		morphologyEx(im_bw, dilated, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+		vector<vector<Point> > contours;
+		findContours(dilated, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+
+		//std::cout << contours.size() << endl;
+		//namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
+		//cvtColor(dilated, dilated, COLOR_GRAY2BGR);
+		//drawContours(dilated, contours, -1, Scalar(0,255,0));
+		//imshow("Display window", dilated);
+		//waitKey(0);
+
+		return contours.size();
 	}
 
 
