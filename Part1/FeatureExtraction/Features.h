@@ -164,13 +164,12 @@ public:
 		int areaOfHull = 0;
 		int currentArea, currentArcLength;
 		for (int i = 0; i< contours.size(); i++) {
+			// search for biggest Arc
 			currentArcLength = arcLength(hull[i], true);
 			if (currentArcLength > lengthOfHull) {
 				lengthOfHull = currentArcLength;
-			}
-			currentArea = contourArea(hull[i], false);
-			if (currentArea > areaOfHull) {
-				areaOfHull = currentArea;
+				// store area for normalization
+				areaOfHull = contourArea(hull[i], false);
 			}
 		}
 		

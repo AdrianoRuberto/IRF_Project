@@ -237,9 +237,9 @@ string process(const string& fileName, ARFFManager& manager) {
 	manager.addAttribute({ "AspectRatio", "NUMERIC" });
 	data << Features::aspectRatio(mat) << ",";
 
-	//manager.addAttribute({ "HullLength/Area", "NUMERIC" });
-	//vector<double> hla = Features::ConvexHull(mat);
-	//data << hla[0] / hla[1] << ",";
+	manager.addAttribute({ "HullLength/Area", "NUMERIC" });
+	vector<double> hla = Features::ConvexHull(mat);
+	data << hla[0] / hla[1] << ",";
 
 	for (int i = 0; i < zones.size(); ++i) {
 		mat = zones.at(i);
