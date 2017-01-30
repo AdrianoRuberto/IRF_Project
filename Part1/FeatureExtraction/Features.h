@@ -245,7 +245,8 @@ public:
 		Mat dilated;
 		morphologyEx(im_bw, dilated, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 		vector<vector<Point> > contours;
-		findContours(dilated, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+		findContours(dilated, contours, RETR_LIST, CV_CHAIN_APPROX_TC89_KCOS);
+
 
 		//std::cout << contours.size() << endl;
 		//namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
