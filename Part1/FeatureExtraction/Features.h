@@ -300,10 +300,10 @@ public:
 		std::vector<cv::Vec4i> lines;
 		HoughLinesP(mat, lines, 1, CV_PI / 180, 50, mat.rows/30, mat.rows/100);
 
-		std::cout << lines.size() << endl;
-		namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
-		imshow("Display window", mat);
-		waitKey(0);
+		//std::cout << lines.size() << endl;
+		//namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
+		//imshow("Display window", mat);
+		//waitKey(0);
 		return lines.size();
 	}
 	
