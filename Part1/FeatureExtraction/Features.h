@@ -11,17 +11,50 @@ class Features
 public:
 
 	/*
-	Returns the number of circle
-	This feature is Rotation variant.
+	Count number of circles in image
 
-	@param Mat The matrice
-	@return The aspect/ratio
+	@param mat image matrix
+	@return number of detected circles
 	*/
-	static int getNumberOfCircle(const Mat& mat) {
+	static int NumberOfCircles(const Mat& mat) {
+		// this is based on an example of opencv
+
+		Mat picture;
+
+		/// Reduce the noise so we avoid false circle detection
+		GaussianBlur(mat, mat, Size(9, 9), 2, 2);
+
+		mat.copyTo(picture);
+		cvtColor(picture, picture, COLOR_GRAY2BGR);
+
 		vector<Vec3f> circles;
-		HoughCircles(mat, circles, CV_HOUGH_GRADIENT, 1, mat.rows / 8, 150, 50, 0, 0);
+
+		/// Apply the Hough Transform to find the circles
+		HoughCircles(mat, circles, CV_HOUGH_GRADIENT, 1, mat.rows / 4, 150, 30, 0, mat.rows / 2);
+
+		/*
+		/// Draw the circles detected
+		for (size_t i = 0; i < circles.size(); i++)
+		{
+			Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+			int radius = cvRound(circles[i][2]);
+			// circle center
+			circle(picture, center, 3, Scalar(0, 255, 0), -1, 8, 0);
+			// circle outline
+			circle(picture, center, radius, Scalar(0, 0, 255), 3, 8, 0);
+		}
+
+		cout << circles.size() << endl;
+		/// Show your results
+		namedWindow("Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE);
+		imshow("Hough Circle Transform Demo", picture);
+
+		waitKey(0);
+
+		*/
 
 		return circles.size();
+
 	}
 
 	/*

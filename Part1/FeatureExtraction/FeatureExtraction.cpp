@@ -254,8 +254,8 @@ string process(const string& fileName, ARFFManager& manager) {
 	manager.addAttribute({ "ConnectedComponents", "NUMERIC" });
 	data << Features::ConnectedComponentsFeature(mat) << ",";
 
-	//manager.addAttribute({ "NumberOfCircles", "NUMERIC" });
-	//data << Features::NumberOfCircles(mat) << ",";
+	manager.addAttribute({ "NumberOfCircles", "NUMERIC" });
+	data << Features::NumberOfCircles(mat) << ",";
 	
 
 	for (int i = 0; i < zones.size(); ++i) {
