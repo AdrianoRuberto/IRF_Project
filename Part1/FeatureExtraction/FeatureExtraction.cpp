@@ -256,6 +256,9 @@ string process(const string& fileName, ARFFManager& manager) {
 
 	manager.addAttribute({ "NumberOfCircles", "NUMERIC" });
 	data << Features::NumberOfCircles(mat) << ",";
+
+	manager.addAttribute({ "NumberOfLines", "NUMERIC" });
+	data << Features::NumberOfLines(mat) << ",";
 	
 
 	for (int i = 0; i < zones.size(); ++i) {
