@@ -259,6 +259,8 @@ string process(const string& fileName, ARFFManager& manager) {
 
 	manager.addAttribute({ "NumberOfLines", "NUMERIC" });
 	data << Features::NumberOfLines(mat) << ",";
+
+	Features::HarrisCorners(mat);
 	
 
 	for (int i = 0; i < zones.size(); ++i) {
