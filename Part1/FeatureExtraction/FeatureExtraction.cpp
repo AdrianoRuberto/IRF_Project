@@ -82,78 +82,52 @@ Mat normalize(const Mat& mat) {
 	
 	// Threshold the HSV image, keep only the blue/colourful pixels
 	Mat hsv;
-	Scalar hsv_l(20, 60, 60);
+	Scalar hsv_l(20, 80, 80);
 	Scalar hsv_h(130, 255, 255);
 	cvtColor(mat, hsv, CV_BGR2HSV);
 	Mat bw;
 	inRange(hsv, hsv_l, hsv_h, bw);
+	//namedWindow("hsv-filt", WINDOW_AUTOSIZE);// Create a window for display.
+	//imshow("hsv-filt", bw);
+	//waitKey(0);
 	
 	// convert to grayscale
 	Mat im_gray;
 	cvtColor(mat, im_gray, COLOR_BGR2GRAY);
-
+	
 	// blur slightly and threshold
 	Mat im_blur;
 	blur(bw, im_blur, Size(10, 10));
 	Mat im_bw;
 	Scalar average = mean(im_blur);
-	threshold(im_blur, im_bw, average.val[0], 255, THRESH_BINARY);
+	threshold(im_blur, im_bw, average.val[0]+10, 255, THRESH_BINARY);
 
-	// extract contours
-	Mat dilated;
-	morphologyEx(im_bw, dilated, MORPH_OPEN, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
-	vector<vector<Point> > contours;
-	findContours(dilated, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+	// vector with all non-black point positions
+	std::vector<cv::Point> nonBlackList;
+	nonBlackList.reserve(im_bw.rows*im_bw.cols);
 
-	// strip large contour areas
-	vector<vector<Point> > stripped_contours;
-	int image_size = im_bw.cols * im_bw.rows;
-	for (auto c : contours) {
-		if (contourArea(c) < image_size) {
-			stripped_contours.push_back(c);
-		}
-	}
-	
-
-	// find best bounding box
-	int best_box[4] = { -1, -1, -1, -1 };
-	for (auto c : stripped_contours) {
-		Rect bound = boundingRect(c);
-		int x = bound.x;
-		int y = bound.y;
-		int x2 = bound.x + bound.width;
-		int y2 = bound.y + bound.height;
-		if (best_box[0] < 0) {
-			best_box[0] = x;
-			best_box[1] = y;
-			best_box[2] = x2;
-			best_box[3] = y2;
-		}
-		else {
-			if (bound.x < best_box[0]) {
-				best_box[0] = bound.x;
-			}
-			if (bound.y < best_box[1]) {
-				best_box[1] = bound.y;
-			}
-			if (x2 > best_box[2]) {
-				best_box[2] = x2;
-			}
-			if (y2 > best_box[3]) {
-				best_box[3] = y2;
+	// add all non-black points to the vector
+	//TODO: there are more efficient ways to iterate through the image
+	for (int j = 0; j<im_bw.rows; ++j)
+		for (int i = 0; i<im_bw.cols; ++i)
+		{
+			// if not black: add to the list
+			if (im_bw.at<uchar>(j, i) != 0)
+			{
+				nonBlackList.push_back(cv::Point(i, j));
 			}
 		}
-	}
 
-	Rect myROI(best_box[0], best_box[1], best_box[2] - best_box[0] , best_box[3] - best_box[1]);
+	// create bounding rect around those points
+	cv::Rect bb = cv::boundingRect(nonBlackList);
 
-	// Crop the full image to that image contained by the rectangle myROI
-	// Note that this doesn't copy the data
-	Mat croppedImage = im_gray(myROI);
+	// display result
+	//namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
+	//cv::imshow("found rect", im_gray(bb));
+	//waitKey(0);
+
 	Mat output;
-	croppedImage.copyTo(output);
-
-	cout << "Top: " << best_box[1] << " | " << "Bottom: " << best_box[3] << endl;
+	im_gray(bb).copyTo(output);
 	
 	return output;
 }
@@ -222,9 +196,16 @@ Process the given fileName with different features.
 */
 string process(const string& fileName, ARFFManager& manager) {
 
-	Mat mat = loadImage(path + fileName);
+	Mat mat1 = loadImage(path + fileName);
 
-	cvtColor(mat, mat, CV_BGR2GRAY);
+	//cvtColor(mat, mat, CV_BGR2GRAY);
+	Mat mat;
+	mat = normalize(mat1); 
+	//namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
+	//imshow("Display window", mat);
+	//namedWindow("vorher", WINDOW_AUTOSIZE);// Create a window for display.
+	//imshow("vorher", mat1);
+	//waitKey(0);
 
 	stringstream data;
 	
@@ -260,7 +241,7 @@ string process(const string& fileName, ARFFManager& manager) {
 	manager.addAttribute({ "NumberOfLines", "NUMERIC" });
 	data << Features::NumberOfLines(mat) << ",";
 
-	Features::HarrisCorners(mat);
+	//Features::HarrisCorners(mat);
 	
 
 	for (int i = 0; i < zones.size(); ++i) {
