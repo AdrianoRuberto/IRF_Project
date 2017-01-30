@@ -310,7 +310,9 @@ public:
 	/*
 	Harris corners
 	*/
-	static void HarrisCorners(const Mat& mat) {
+	static vector<Point> HarrisCorners(const Mat& mat) {
+		vector<Point> normPoints;
+
 		int thresh = 200;
 		Mat dst, dst_norm, dst_norm_scaled;
 		dst = Mat::zeros(mat.size(), CV_32FC1);
@@ -330,6 +332,7 @@ public:
 				if ((int)dst_norm.at<float>(j, i) > thresh)
 				{
 					circle(dst_norm_scaled, Point(i, j), 5, Scalar(0), 2, 8, 0);
+					normPoints.push_back(Point(i*1.0/dst_norm.cols, j*1.0/dst_norm.rows));
 				}
 			}
 		}
@@ -340,6 +343,8 @@ public:
 		imshow("corners_window", dst_norm_scaled);
 
 		waitKey(0);
+
+		return normPoints;
 
 	}
 
