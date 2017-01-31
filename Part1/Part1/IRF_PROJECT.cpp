@@ -6,7 +6,6 @@
 // date : 4.10.2016
 //////////////////////////////////////////////////////////////////////////
 
-//#include"stdafx.h"
 #include "histogram.h"
 #include "cv.h"
 #include "highgui.h"
@@ -153,6 +152,7 @@ double rotation(const Mat& im_gray, Mat& im_rotated)
 */
 vector<Rect> getRectangles(const Mat& im_rgb) {
 	Mat im_gray;
+
 	cvtColor(im_rgb, im_gray, COLOR_BGR2GRAY);
 	int im_rows = im_gray.rows;
 	int im_cols = im_gray.cols;
@@ -472,6 +472,7 @@ int main(void) {
 	int processed_images = 0;
 	int successful_images = 0;
 
+	// Get trough all file with .png extension
 	for (string filename : getFilesName(PATH_IMGDB.c_str(), ".png")) {
 		Mat im_rgb = imread(PATH_IMGDB + filename);
 		if (im_rgb.data != NULL) {
@@ -479,7 +480,7 @@ int main(void) {
 			std::cout << filename << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
 
-			if (res.size() == 35) { 
+			if (res.size() == 35) { // We get all rectangles
 				array<array<String, 2>, 7> icons;
 
 				isolateAndClassifyIcons(im_rgb, res, icons);
@@ -494,6 +495,7 @@ int main(void) {
 		}
 	}
 
+	// Statistics
 	clock_t end_time = clock();
 	clock_t tot_time = (end_time - start_time);
 	std::cout << "Total execution time:      " << tot_time / 1000 << "s" << endl;
