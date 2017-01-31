@@ -1,5 +1,10 @@
-// FeatureExtraction.cpp : Defines the entry point for the console application.
-//
+//////////////////////////////////////////////////////////////////////////
+// Module IRF, 5-iNFO
+// Goal : Normalize and feature extraction
+// auteur : Adriano Ruberto, Emmanuel Kiegaing, Guimel Mendoza Betancourt, 
+//			Patrick Kanzler
+// date : 29.11.2016
+//////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
 #include "ARFFManager.h"
@@ -337,7 +342,7 @@ int main()
 	}
 
 	const int NB_FILES = fileNames.size();
-	cout << "Processing all files (" << fileNames.size() << ")" << endl << "..." << endl;
+	cout << "Processing all files (" << fileNames.size() << ")" << endl;
 
 	while (fileNames.size() > 0) {
 		int nb = rand() % fileNames.size();
@@ -350,7 +355,7 @@ int main()
 		drawProgressionBar((float)(NB_FILES - fileNames.size()) / NB_FILES);
 	}	
 
-	cout << "Successfuly process all files" << endl;
+	cout << endl << "Successfuly process all files" << endl;
 
 
 	manager.addAttribute({ "class", getClassName() });
