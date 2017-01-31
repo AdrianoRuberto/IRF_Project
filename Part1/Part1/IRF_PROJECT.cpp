@@ -45,6 +45,8 @@ using namespace std;
 // The icons are located in the 1/6 left of the image
 #define ICONS_BAND_FRAC 6 
 
+const string SAVE_DIR = "toast/";
+const string PATH_IMGDB = "donnees/";
 
 /*
 	Loads the image.
@@ -328,7 +330,6 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 	@param subThumbnails	The matrices to save
 */
 void saveSubThumbnails(const string& fileName, const vector<Mat>& subThumbnails, array<array<String, 2>, 7> iconLabels) {
-	const string SAVE_DIR = "toast/";
 
 	string scripter = fileName.substr(0, 3);
 	string page = fileName.substr(3, 2);
@@ -399,7 +400,7 @@ String classifyCroppedIcon(const Mat& im, const map<String, Mat>& icons) {
 		matchTemplate(im, i.second, result, CV_TM_CCOEFF_NORMED);
 		minMaxLoc(result, NULL, &currentVal);
 
-		if (currentVal >= 0.5 && currentVal > maxVal) {
+		if (currentVal >= 0.3 && currentVal > maxVal) {
 			maxVal = currentVal;
 			res = i.first;
 		}
@@ -466,7 +467,6 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 
 int main(void) {
 	clock_t start_time = clock();
-	const string PATH_IMGDB = "donnees/";
 	vector<string> unusedImages;
 
 	int processed_images = 0;
