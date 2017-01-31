@@ -44,12 +44,12 @@ public:
 			circle(picture, center, radius, Scalar(0, 0, 255), 3, 8, 0);
 		}
 
-		cout << circles.size() << endl;
+		//cout << circles.size() << endl;
 		/// Show your results
-		namedWindow("Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE);
-		imshow("Hough Circle Transform Demo", picture);
+		//namedWindow("Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE);
+		//imshow("Hough Circle Transform Demo", picture);
 
-		waitKey(0);
+		//waitKey(0);
 
 		
 

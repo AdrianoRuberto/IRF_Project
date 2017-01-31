@@ -238,7 +238,6 @@ string process(const string& fileName, ARFFManager& manager) {
 	vector<double> hla = Features::ConvexHull(mat);
 	data << hla[0] / hla[1] << ",";
 
-	/*
 	for (int j = 1; j <= 24; ++j) {
 		manager.addAttribute({ "Moment_" + to_string(j) , "NUMERIC" });
 	}
@@ -246,7 +245,7 @@ string process(const string& fileName, ARFFManager& manager) {
 	for (auto m : Features::MomentFeature(mat)) {
 		data << m << ",";
 	}
-	*/
+	
 
 	manager.addAttribute({ "ConnectedComponents", "NUMERIC" });
 	data << Features::ConnectedComponentsFeature(mat) << ",";
@@ -264,7 +263,7 @@ string process(const string& fileName, ARFFManager& manager) {
 		mat = zones.at(i);
 
 		// ADD FEATURES HERE
-		/*
+		
 		for (int j = 1; j <= 7; ++j) {
 			manager.addAttribute({ "M_" + to_string(i) + to_string(j) , "NUMERIC" });
 		}
@@ -272,7 +271,7 @@ string process(const string& fileName, ARFFManager& manager) {
 		for (auto hu : Features::huMomentFeature(mat)) {
 			data << hu << ",";
 		}
-		*/
+		
 		vector<double> com = Features::RelCenterOfMass(mat);
 		manager.addAttribute({ "RelCenterOfMassX_" + to_string(i), "NUMERIC" });
 		data << (double)com[0] << ",";
