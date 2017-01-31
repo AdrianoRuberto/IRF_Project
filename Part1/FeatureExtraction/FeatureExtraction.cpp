@@ -118,6 +118,22 @@ Mat normalize(const Mat& mat) {
 			}
 		}
 
+	int size = nonBlackList.size();
+	if (size < 200) {
+		//namedWindow("src", WINDOW_AUTOSIZE);// Create a window for display.
+		//imshow("src", im_gray);
+		//namedWindow("hsv-filt", WINDOW_AUTOSIZE);// Create a window for display.
+		//imshow("hsv-filt", bw);
+		//namedWindow("thresh", WINDOW_AUTOSIZE);// Create a window for display.
+		//imshow("thresh", im_bw);
+		//waitKey(0);
+		
+		//we have a bad picture, just take the whole one
+		Mat output;
+		im_gray.copyTo(output);
+
+		return output;
+	}
 	// create bounding rect around those points
 	cv::Rect bb = cv::boundingRect(nonBlackList);
 
