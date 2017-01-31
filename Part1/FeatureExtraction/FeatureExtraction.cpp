@@ -291,6 +291,20 @@ string process(const string& fileName, ARFFManager& manager) {
 	return data.str();
 }
 
+void drawProgressionBar(float progress) {
+	int barWidth = 50;
+
+	std::cout << "[";
+	int pos = barWidth * progress;
+	for (int i = 0; i < barWidth; ++i) {
+		if (i < pos) std::cout << "=";
+		else if (i == pos) std::cout << ">";
+		else std::cout << " ";
+	}
+	std::cout << "] " << int(progress * 100.0) << " %\r";
+	std::cout.flush();
+}
+
 int main()
 {
 	string arffName = "test.arff";
@@ -303,6 +317,7 @@ int main()
 		fileNames.push_back(s);
 	}
 
+	const int NB_FILES = fileNames.size();
 	cout << "Processing all files (" << fileNames.size() << ")" << endl << "..." << endl;
 
 	while (fileNames.size() > 0) {
@@ -313,6 +328,7 @@ int main()
 		manager.addDatas(process(fileName, manager));
 
 		fileNames.erase(fileNames.begin() + nb);
+		drawProgressionBar((float)(NB_FILES - fileNames.size()) / NB_FILES);
 	}	
 
 	cout << "Successfuly process all files" << endl;
