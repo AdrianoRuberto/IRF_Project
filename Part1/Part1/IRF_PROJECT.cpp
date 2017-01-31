@@ -1,10 +1,9 @@
 //////////////////////////////////////////////////////////////////////////
 // Module IRF, 5-iNFO
-// Projet - première étape
-// thème : Première étape du projet
-// contenu : Pre-processing and image processing
-// auteur : 
-// date : TODO
+// Goal : Pre-processing and image processing
+// auteur : Adriano Ruberto, Emmanuel Kiegaing, Guimel Mendoza Betancourt, 
+ //			Patrick Kanzler
+// date : 4.10.2016
 //////////////////////////////////////////////////////////////////////////
 
 //#include"stdafx.h"
@@ -48,21 +47,29 @@ using namespace std;
 
 
 /*
-Loads the image.
-If the image can't be loaded, exit the program
-@param name Name of the image to load
-@return The loaded image
+	Loads the image.
+	If the image can't be loaded, exit the program.
+
+	@param name Name of the image to load
+	@return The loaded image
 */
-Mat loadImage(const string &name) {
-	Mat im = imread(name);
+Mat loadImage(const string &fileName) {
+	Mat im = imread(fileName);
 	if (im.data == NULL) {
-		cerr << "Image not found: " << name << endl;
+		cerr << "Image not found: " << fileName << endl;
 		exit(0);
 	}
 	return im;
 }
 
+/*
+	Gets all files name in the directory path.
+	The filter should be the extension of the files to search.
 
+	@param path		The path to the directory
+	@param filter	The extension of files to find
+	@return All the files founded
+*/
 vector<string> getFilesName(const char* path, const char* filter) {
 	vector<string> names;
 	DIR* rep = opendir(path);
@@ -79,7 +86,8 @@ vector<string> getFilesName(const char* path, const char* filter) {
 /*
 	Rotates the original image to make it straight. We look for the band up in
 	the image to look for the longest line we use the canny filter to detect
-	edges and hough transform to detect straight lines
+	edges and hough transform to detect straight lines.
+
 	@param im_gray		The original gray image
 	@param im_rotated	The result of the rotation
 	@return the degree of the rotation
@@ -136,7 +144,8 @@ double rotation(const Mat& im_gray, Mat& im_rotated)
 }
 
 /*
-	Gets the correct rectangles that can be found on the given matrice
+	Gets the correct rectangles that can be found on the given matrice.
+
 	@param im_rgb	The given image
 	@return A vector with all the founded rectangle
 */
@@ -297,7 +306,8 @@ vector<Rect> getRectangles(const Mat& im_rgb) {
 }
 
 /*
-	Slices a given matrice with the given rectangles
+	Slices a given matrice with the given rectangles.
+
 	@param image	The given image
 	@param rects	The vector containing the rectangles
 	@return a vector with submatrice of the given matrice
@@ -312,7 +322,8 @@ vector<Mat> slice(const Mat& image, const vector<Rect>& rects) {
 }
 
 /*
-	Saves the thumbnails with the correct name and file descriptor
+	Saves the thumbnails with the correct name and file descriptor.
+
 	@param fileName			The name of the file
 	@param subThumbnails	The matrices to save
 */
@@ -373,7 +384,11 @@ const map<String, Mat> ICONS_TEXT = {
 };
 
 /*
-Classifies a cropped icon and returns a descriptive string
+	Classifies a cropped icon and returns a descriptive string.
+
+	@param im		The image
+	@param icons	The map of icons
+	@return The descriptive string of the image
 */
 String classifyCroppedIcon(const Mat& im, const map<String, Mat>& icons) {
 	Mat result;
@@ -395,9 +410,12 @@ String classifyCroppedIcon(const Mat& im, const map<String, Mat>& icons) {
 
 /*
 	Isolates all the left type images.
+
+	@param image		The image
+	@param rectangles	The rectangle where are the icons
+	@param result		The result of the isolation
 */
 void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<array<String, 2>, 7>& result) {
-	//TODO strategy for weird rectangle-quantities, general handling for page 22
 	if (rectangles.size() != 35) {
 		std::cout << "Skipping this image because of bad rectangle count!" << endl;
 		return;
@@ -413,23 +431,20 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 		int arithMeanH = 0;
 		meanAccumY += r.y;
 		meanAccumH += r.height;
-		// cout << r.y << endl;
 		rectCount++;
 		if (rectCount % 5 == 0) {
 			arithMeanY = (meanAccumY / 5.0);
 			arithMeanH = (meanAccumH / 5.0);
 
 			// Setup a rectangle to define your region of interest
-			// TODO fine-tuning the cropping (if not robust enough)
 			cv::Rect myROI(rectangles[rectCount-5].x - (int)(image.cols*0.15), arithMeanY, (int)(image.cols*0.08), arithMeanH);
-			//
 
 			// Crop the full image to that image contained by the rectangle myROI
 			// Note that this doesn't copy the data
 			cv::Mat croppedRef(image, myROI);
 
 			cv::Mat cropped;
-			//TODO is it faster to not copy?
+
 			// Copy the data into new matrix
 			croppedRef.copyTo(cropped);
 
@@ -456,7 +471,6 @@ int main(void) {
 
 	int processed_images = 0;
 	int successful_images = 0;
-	//TODO further improvements through using multithreading
 
 	for (string filename : getFilesName(PATH_IMGDB.c_str(), ".png")) {
 		Mat im_rgb = imread(PATH_IMGDB + filename);
@@ -481,19 +495,15 @@ int main(void) {
 
 			imwrite(filename, test);
 
-
-
-
 			processed_images++;
 			std::cout << filename << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
 
-			if (res.size() == 35) { // TODO what to do with the images with wrong rectangle counts
+			if (res.size() == 35) { 
 				array<array<String, 2>, 7> icons;
 
 				isolateAndClassifyIcons(im_rgb, res, icons);
-				//TODO make sure that we have no remnants of the black line by blocking everything
-				// in the sub-images that is not blue
+
 				saveSubThumbnails(filename, slice(im_rgb, res), icons);
 				successful_images++;
 			}
