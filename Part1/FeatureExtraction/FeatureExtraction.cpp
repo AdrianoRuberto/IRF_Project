@@ -16,7 +16,7 @@ using namespace std;
 using namespace cv;
 
 const string path = "..//Part1//ResultsV2/";
-const string arffName = "test.arff";
+const string arffName = "result.arff";
 vector<string> NAMES = { "accident", "bomb", "car", "casualty", "electricity", "fire", "fire_brigade", "flood", "gas", "injury", "paramedics", "person", "police", "roadblock"};
 
 
@@ -66,6 +66,12 @@ vector<string> getFilesName(const char* path, const char* filter) {
 	return names;
 }
 
+/*
+	Gets the normalize name from a file
+
+	@param path the path to the file
+	@return The normalize name
+*/
 string getNormalizeNameFromFile(const string& path) {
 	string fileTxt = path.substr(0, path.size() - 3) + "txt"; 
 	ifstream file(fileTxt);
@@ -164,7 +170,8 @@ Mat normalize(const Mat& mat) {
 }
 
 /*
-	Gets the class name for the data
+	Gets the class name for the data.
+
 	@return a string separeted with ',' in between each class name
 */
 string getClassName() {
@@ -178,6 +185,7 @@ string getClassName() {
 
 /*
 	Gets the label name of a image. If the label is not found, exit.
+
 	@param fileName	The file name 
 	@return the label name
 */
@@ -225,10 +233,10 @@ vector<Mat> getZoningMatrices(const Mat& mat, int nbCol, int nbRow) {
 }
 
 /*
-Process the given fileName with different features.
+	Process the given fileName with different features.
 
-@param fileName The fileName
-@param manager	The ARFF manager
+	@param fileName The fileName
+	@param manager	The ARFF manager
 */
 string process(const string& fileName, ARFFManager& manager) {
 
@@ -294,8 +302,6 @@ string process(const string& fileName, ARFFManager& manager) {
 		data << (double)Features::nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
 
 	}
-
-
 
 	data << getLabelName(fileName);
 	return data.str();
