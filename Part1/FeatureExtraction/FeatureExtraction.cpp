@@ -15,20 +15,26 @@
 using namespace std;
 using namespace cv;
 
-string path = "..//Part1//Results/";
+const string path = "..//Part1//toast/";
+const string arffName = "toast.arff";
 vector<string> NAMES = { "accident", "bomb", "car", "casualty", "electricity", "fire", "fire_brigade", "flood", "gas", "injury", "paramedics", "person", "police", "roadblock"};
 
 
-void exit(string exitMsg) {
+/*
+	Exits with a message
+	@param exitMsg the message to show before exit
+*/
+void exit(const string& exitMsg) {
 	cerr << exitMsg << endl;
-	system("pause");
+	waitKey(1);
 	exit(0);
 }
+
 /*
-Loads the image.
-If the image can't be loaded, exit the program
-@param name Name of the image to load
-@return The loaded image
+	Loads the image.
+	If the image can't be loaded, exit the program
+	@param name Name of the image to load
+	@return The loaded image
 */
 Mat loadImage(const string &name) {
 	Mat im = imread(name);
@@ -38,6 +44,15 @@ Mat loadImage(const string &name) {
 	return im;
 }
 
+
+/*
+	Gets all files name in the directory path.
+	The filter should be the extension of the files to search.
+
+	@param path		The path to the directory
+	@param filter	The extension of files to find
+	@return All the files founded
+*/
 vector<string> getFilesName(const char* path, const char* filter) {
 	vector<string> names;
 	DIR* rep = opendir(path);
@@ -73,10 +88,10 @@ string getNormalizeNameFromFile(const string& path) {
 }
 
 /*
-cuts away white space around image an returns a grayscale image
+	Cuts away white space around image an returns a grayscale image.
 
-@param mat  image matrix
-@return cropped and grayscaled image
+	@param mat  image matrix
+	@return cropped and grayscaled image
 */
 Mat normalize(const Mat& mat) {
 	
@@ -148,13 +163,10 @@ Mat normalize(const Mat& mat) {
 	return output;
 }
 
-void test_normalize(String file) {
-	Mat mat = loadImage(path + file);
-	namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
-	imshow("Display window", normalize(mat));
-	waitKey(0);
-}
-
+/*
+	Gets the class name for the data
+	@return a string separeted with ',' in between each class name
+*/
 string getClassName() {
 	stringstream ss;
 	ss << "{";
@@ -164,6 +176,11 @@ string getClassName() {
 	return ss.str();
 }
 
+/*
+	Gets the label name of a image. If the label is not found, exit.
+	@param fileName	The file name 
+	@return the label name
+*/
 string getLabelName(const string& fileName) {
 	ifstream file(path.c_str() + fileName.substr(0, fileName.find_last_of(".")) + ".txt");
 	string s, label;
@@ -181,7 +198,12 @@ string getLabelName(const string& fileName) {
 	}
 }
 
-
+/*
+	Gets a zoning matrices.
+	@param mat		the matrice to zone
+	@param nbCol	the number of column
+	@param nbRow	the number of row
+*/
 vector<Mat> getZoningMatrices(const Mat& mat, int nbCol, int nbRow) {
 	if (nbCol <= 0 || nbRow <= 0) {
 		throw out_of_range("NbCol or nbLine is out of range");
@@ -279,6 +301,10 @@ string process(const string& fileName, ARFFManager& manager) {
 	return data.str();
 }
 
+/*
+	Draws a progression bar
+	@progress the progresse [0, 1]
+*/
 void drawProgressionBar(float progress) {
 	int barWidth = 50;
 
@@ -295,7 +321,6 @@ void drawProgressionBar(float progress) {
 
 int main()
 {
-	string arffName = "test.arff";
 	ofstream f(arffName);
 	ARFFManager manager("IRF_Project");
 
