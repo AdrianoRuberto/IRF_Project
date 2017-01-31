@@ -44,8 +44,8 @@ using namespace std;
 // The icons are located in the 1/6 left of the image
 #define ICONS_BAND_FRAC 6 
 
-const string SAVE_DIR = "toast/";
-const string PATH_IMGDB = "donnees/";
+const string SAVE_DIR = "ResultsV2/";
+const string PATH_IMGDB = "imgdb/";
 
 /*
 	Loads the image.

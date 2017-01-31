@@ -15,8 +15,8 @@
 using namespace std;
 using namespace cv;
 
-const string path = "..//Part1//toast/";
-const string arffName = "toast.arff";
+const string path = "..//Part1//ResultsV2/";
+const string arffName = "test.arff";
 vector<string> NAMES = { "accident", "bomb", "car", "casualty", "electricity", "fire", "fire_brigade", "flood", "gas", "injury", "paramedics", "person", "police", "roadblock"};
 
 
