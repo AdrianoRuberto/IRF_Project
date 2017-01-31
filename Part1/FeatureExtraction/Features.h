@@ -30,9 +30,9 @@ public:
 		vector<Vec3f> circles;
 
 		/// Apply the Hough Transform to find the circles
-		HoughCircles(mat, circles, CV_HOUGH_GRADIENT, 1, mat.rows / 4, 150, 30, 0, mat.rows / 2);
+		HoughCircles(mat, circles, CV_HOUGH_GRADIENT, 1, mat.rows / 4, 150, 30, 0, mat.rows);
 
-		/*
+		
 		/// Draw the circles detected
 		for (size_t i = 0; i < circles.size(); i++)
 		{
@@ -51,7 +51,7 @@ public:
 
 		waitKey(0);
 
-		*/
+		
 
 		return circles.size();
 
