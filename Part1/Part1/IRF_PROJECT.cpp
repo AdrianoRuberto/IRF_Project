@@ -475,26 +475,6 @@ int main(void) {
 	for (string filename : getFilesName(PATH_IMGDB.c_str(), ".png")) {
 		Mat im_rgb = imread(PATH_IMGDB + filename);
 		if (im_rgb.data != NULL) {
-
-			Mat hsv;
-			Scalar hsv_l(20, 60, 60);
-			Scalar hsv_h(130, 255, 255);
-			cvtColor(im_rgb, hsv, CV_BGR2HSV);
-			Mat bw;
-			inRange(hsv, hsv_l, hsv_h, bw);
-
-			bitwise_not(bw, bw);
-			Mat test;
-
-			Mat im_bw;
-			cvtColor(im_rgb, im_bw, CV_BGR2GRAY);
-		    
-			bitwise_and(im_bw, bw, test);
-			imwrite(filename + filename, test);
-			bitwise_not(test, test, bw);
-
-			imwrite(filename, test);
-
 			processed_images++;
 			std::cout << filename << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
