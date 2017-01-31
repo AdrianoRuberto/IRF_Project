@@ -210,16 +210,7 @@ Process the given fileName with different features.
 */
 string process(const string& fileName, ARFFManager& manager) {
 
-	Mat mat1 = loadImage(path + fileName);
-
-	//cvtColor(mat, mat, CV_BGR2GRAY);
-	Mat mat;
-	mat = normalize(mat1); 
-	//namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
-	//imshow("Display window", mat);
-	//namedWindow("vorher", WINDOW_AUTOSIZE);// Create a window for display.
-	//imshow("vorher", mat1);
-	//waitKey(0);
+	Mat mat = normalize(loadImage(path + fileName));
 
 	stringstream data;
 	
@@ -232,7 +223,6 @@ string process(const string& fileName, ARFFManager& manager) {
 	vector<double> hla = Features::ConvexHull(mat);
 	data << hla[0] / hla[1] << ",";
 
-	
 	for (int j = 1; j <= 24; ++j) {
 		manager.addAttribute({ "Moment_" + to_string(j) , "NUMERIC" });
 	}
@@ -249,7 +239,6 @@ string process(const string& fileName, ARFFManager& manager) {
 		data << hu << ",";
 	}
 	
-
 	manager.addAttribute({ "ConnectedComponents", "NUMERIC" });
 	data << Features::ConnectedComponentsFeature(mat) << ",";
 
