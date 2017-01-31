@@ -1,10 +1,9 @@
 //////////////////////////////////////////////////////////////////////////
 // Module IRF, 5-iNFO
-// Projet - première étape
-// thème : Première étape du projet
-// contenu : Pre-processing and image processing
-// auteur : 
-// date : TODO
+// Goal : Pre-processing and image processing
+// auteur : Adriano Ruberto, Emmanuel Kiegaing, Guimel Mendoza Betancourt, 
+ //			Patrick Kanzler
+// date : 4.10.2016
 //////////////////////////////////////////////////////////////////////////
 
 //#include"stdafx.h"
@@ -417,7 +416,6 @@ String classifyCroppedIcon(const Mat& im, const map<String, Mat>& icons) {
 	@param result		The result of the isolation
 */
 void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<array<String, 2>, 7>& result) {
-	//TODO strategy for weird rectangle-quantities, general handling for page 22
 	if (rectangles.size() != 35) {
 		std::cout << "Skipping this image because of bad rectangle count!" << endl;
 		return;
@@ -439,16 +437,14 @@ void isolateAndClassifyIcons(const Mat& image, vector<Rect>& rectangles, array<a
 			arithMeanH = (meanAccumH / 5.0);
 
 			// Setup a rectangle to define your region of interest
-			// TODO fine-tuning the cropping (if not robust enough)
 			cv::Rect myROI(rectangles[rectCount-5].x - (int)(image.cols*0.15), arithMeanY, (int)(image.cols*0.08), arithMeanH);
-			//
 
 			// Crop the full image to that image contained by the rectangle myROI
 			// Note that this doesn't copy the data
 			cv::Mat croppedRef(image, myROI);
 
 			cv::Mat cropped;
-			//TODO is it faster to not copy?
+
 			// Copy the data into new matrix
 			croppedRef.copyTo(cropped);
 
@@ -475,7 +471,6 @@ int main(void) {
 
 	int processed_images = 0;
 	int successful_images = 0;
-	//TODO further improvements through using multithreading
 
 	for (string filename : getFilesName(PATH_IMGDB.c_str(), ".png")) {
 		Mat im_rgb = imread(PATH_IMGDB + filename);
@@ -500,19 +495,15 @@ int main(void) {
 
 			imwrite(filename, test);
 
-
-
-
 			processed_images++;
 			std::cout << filename << " | ";
 			vector<Rect> res = getRectangles(im_rgb);
 
-			if (res.size() == 35) { // TODO what to do with the images with wrong rectangle counts
+			if (res.size() == 35) { 
 				array<array<String, 2>, 7> icons;
 
 				isolateAndClassifyIcons(im_rgb, res, icons);
-				//TODO make sure that we have no remnants of the black line by blocking everything
-				// in the sub-images that is not blue
+
 				saveSubThumbnails(filename, slice(im_rgb, res), icons);
 				successful_images++;
 			}
