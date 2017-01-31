@@ -189,8 +189,6 @@ vector<Mat> getZoningMatrices(const Mat& mat, int nbCol, int nbRow) {
 
 	vector<Mat> matrices;
 
-	matrices.push_back(mat);
-
 	int colStep = mat.cols / nbCol;
 	int rowStep = mat.rows / nbRow;
 
@@ -227,10 +225,6 @@ string process(const string& fileName, ARFFManager& manager) {
 	
 	vector<Mat> zones = getZoningMatrices(mat, 2, 2);
 
-
-
-
-
 	manager.addAttribute({ "AspectRatio", "NUMERIC" });
 	data << Features::aspectRatio(mat) << ",";
 
@@ -238,7 +232,7 @@ string process(const string& fileName, ARFFManager& manager) {
 	vector<double> hla = Features::ConvexHull(mat);
 	data << hla[0] / hla[1] << ",";
 
-	/*
+	
 	for (int j = 1; j <= 24; ++j) {
 		manager.addAttribute({ "Moment_" + to_string(j) , "NUMERIC" });
 	}
@@ -246,7 +240,15 @@ string process(const string& fileName, ARFFManager& manager) {
 	for (auto m : Features::MomentFeature(mat)) {
 		data << m << ",";
 	}
-	*/
+
+	for (int j = 1; j <= 7; ++j) {
+		manager.addAttribute({ "HUMoment_" + to_string(j) , "NUMERIC" });
+	}
+
+	for (auto hu : Features::huMomentFeature(mat)) {
+		data << hu << ",";
+	}
+	
 
 	manager.addAttribute({ "ConnectedComponents", "NUMERIC" });
 	data << Features::ConnectedComponentsFeature(mat) << ",";
@@ -258,21 +260,18 @@ string process(const string& fileName, ARFFManager& manager) {
 	data << Features::NumberOfLines(mat) << ",";
 
 	//Features::HarrisCorners(mat);
+
+	vector<double> com = Features::RelCenterOfMass(mat);
+	manager.addAttribute({ "RelCenterOfMassX", "NUMERIC" });
+	manager.addAttribute({ "RelCenterOfMassY", "NUMERIC" });
+	data << (double)com[0] << "," << (double)com[1] << ",";
+	manager.addAttribute({ "RatioPixel", "NUMERIC" });
+	data << (double)Features::nbBlackPixel(mat) / (mat.rows * mat.cols) << ",";
 	
 
 	for (int i = 0; i < zones.size(); ++i) {
 		mat = zones.at(i);
 
-		// ADD FEATURES HERE
-		/*
-		for (int j = 1; j <= 7; ++j) {
-			manager.addAttribute({ "M_" + to_string(i) + to_string(j) , "NUMERIC" });
-		}
-
-		for (auto hu : Features::huMomentFeature(mat)) {
-			data << hu << ",";
-		}
-		*/
 		vector<double> com = Features::RelCenterOfMass(mat);
 		manager.addAttribute({ "RelCenterOfMassX_" + to_string(i), "NUMERIC" });
 		data << (double)com[0] << ",";
